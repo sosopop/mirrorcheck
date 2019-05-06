@@ -6,8 +6,8 @@ int main(int argc, char *argv[]) {
     mirror_accel_init();
     int port = mirror_accel_create("0.0.0.0:0");
     if (port > 0) {
-        printf("listening on port: %d \npress any key to shutdown this service\n", port);
-        getch();
+        printf("listening on port: %d \npress ENTER key to shutdown this service\n", port);
+        getchar();
         mirror_accel_destroy(port);
     }
     mirror_accel_uninit();
