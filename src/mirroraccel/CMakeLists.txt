@@ -9,20 +9,6 @@ if(WIN32)
     add_definitions(-DWIN32_LEAN_AND_MEAN)
 endif()
 
-#if(UNIX)
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
-#endif()
-
-add_executable(mirroraccel ${MA_SOURCE})
-
-if( NOT APPLE AND NOT WIN32 )
-    set(WHOLE_ARCHIVE_BEGIN "-Wl,--whole-archive")
-    set(WHOLE_ARCHIVE_END "-Wl,--no-whole-archive")
-else()
-    set(WHOLE_ARCHIVE_BEGIN "")
-    set(WHOLE_ARCHIVE_END "")
-endif()
-
 list(APPEND LINK_LIB 
 mongoose 
 mbedcrypto 
@@ -46,6 +32,7 @@ if(ANDROID)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIE")
 endif()
 
+add_executable(mirroraccel ${MA_SOURCE})
 target_link_libraries(mirroraccel ${LINK_LIB})
 
 add_library(libmirroraccel SHARED ${MA_SOURCE} ${MA_RESOURCE})
