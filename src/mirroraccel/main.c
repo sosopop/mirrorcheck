@@ -1,8 +1,23 @@
 #include "mirroraccel.h"
 #include <stdio.h>
+#include <assert.h>
+#ifdef WIN32
+#include <crtdbg.h>
+#include <stdlib.h>
+#include <windows.h>
+
+void exit_handle(void)
+{
+    assert(_CrtDumpMemoryLeaks() == 0);
+}
+#endif
 
 int main(int argc, char *argv[]) {
     int i = 0;
+#ifdef WIN32
+    atexit(exit_handle);
+    _CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) | _CRTDBG_LEAK_CHECK_DF);
+#endif
     mirror_accel_init();
     int port = mirror_accel_create("0.0.0.0:0");
     if (port > 0) {
