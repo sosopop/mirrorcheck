@@ -39,10 +39,28 @@ void mirror_accel_uninit()
     ma_mutex_destroy(&mtx_srv);
 }
 
+static int start_with(const struct mg_str *str1, const char* str2) {
+    size_t i = 0;
+    while (str2[i] && i < str1->len && str2[i] == str1->p[i])
+        i++;
+    return str2[i];
+}
+
 static void ev_handler(struct mg_connection *nc, int ev, void *p, void* user_data) {
     if (ev == MG_EV_HTTP_REQUEST) {
-        mg_send_head(nc, 200, sizeof("hello") - 1, 0);
-        mg_send(nc, "hello", sizeof("hello") - 1);
+        struct http_message *hm = (struct http_message *) p;
+        if (mg_vcmp(&hm->uri, "/api/init") == 0) {
+            mg_send_head(nc, 200, sizeof("hello") - 1, 0);
+            mg_send(nc, "hello", sizeof("hello") - 1);
+        } 
+        else if (start_with(&hm->uri, "/stream/") == 0) {
+            mg_send_head(nc, 200, sizeof("world") - 1, 0);
+            mg_send(nc, "world", sizeof("world") - 1);
+        }
+        else {
+            mg_send_head(nc, 200, sizeof("!!!") - 1, 0);
+            mg_send(nc, "!!!", sizeof("!!!") - 1);
+        }
     }
 }
 
