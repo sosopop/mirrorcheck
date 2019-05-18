@@ -75,7 +75,7 @@ static void parse_mirrors_array(const char *str, int len, void *user_data)
         if (url) {
             struct ma_mirror_item_s* item = (struct ma_mirror_item_s*)malloc(sizeof(struct ma_mirror_item_s));
             item->url = url;
-            QUEUE_INSERT_TAIL(&vc->mirror_items, item);
+            QUEUE_INSERT_TAIL(&vc->mirror_items, &item->link);
         }
     }
 }
@@ -90,7 +90,6 @@ static int api_conn_new(struct mg_connection *nc, int ev, void *p, void *user_da
         ret = -1;
         goto cleanup;
     }
-
     vc = (struct ma_accel_vir_conn_s *)malloc(sizeof(struct ma_accel_vir_conn_s));
     memset(vc, 0, sizeof(struct ma_accel_vir_conn_s));
     QUEUE_INIT(&vc->mirror_items);

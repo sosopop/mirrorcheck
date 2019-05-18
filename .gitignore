@@ -1,4 +1,5 @@
 .DS_Store
 .vscode/ipch
+3rdparty/zlib/zconf.h
 3rdparty/zlib/zconf.h.included
 build/

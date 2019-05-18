@@ -67,6 +67,10 @@ if(ANDROID)
     set(HAVE_POLL_FINE_EXITCODE__TRYRUN_OUTPUT "" CACHE STRING "Output from TRY_RUN" FORCE)
 endif()
 
+if(WIN32)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /utf-8")
+endif()
+
 #set(MBEDTLS_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/mbedtls/include" CACHE STRING "" FORCE)
 
 add_subdirectory(3rdparty/zlib)
