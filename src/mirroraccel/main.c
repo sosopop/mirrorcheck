@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
     _CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) | _CRTDBG_LEAK_CHECK_DF);
 #endif
     mirror_accel_init();
-    int port = mirror_accel_create("0.0.0.0:0");
+    int port = mirror_accel_create("0.0.0.0:7777");
     if (port > 0) {
         printf("listening on port: %d \npress ENTER key to shutdown this service\n", port);
         getchar();

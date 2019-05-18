@@ -1,3 +1,8 @@
 {
-    "C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools"
+    "C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools",
+    "files.associations": {
+        "mirroraccel_thread.h": "c",
+        "mirroraccel_inter.h": "c"
+    },
+    "editor.formatOnSave": true
 }

@@ -70,6 +70,7 @@ endif()
 #set(MBEDTLS_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/mbedtls/include" CACHE STRING "" FORCE)
 
 add_subdirectory(3rdparty/zlib)
+add_subdirectory(3rdparty/frozen)
 add_subdirectory(3rdparty/mongoose)
 add_subdirectory(3rdparty/curl)
 add_subdirectory(3rdparty/c-ares)
