@@ -1,5 +1,3 @@
 {
-    "C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools",
-    "http.proxy": "http://bengbengtiaotiao.xyz:8081",
-    "http.proxyAuthorization": "c29zb3BvcDoxMjM0NTY3OA=="
+    "C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools"
 }
