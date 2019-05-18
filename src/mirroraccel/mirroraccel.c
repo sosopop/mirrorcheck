@@ -80,7 +80,7 @@ int mirror_accel_create(const char* addr)
     struct ma_srv_s* srv = 0;
 
     ma_mutex_acquire(&mtx_srv);
-    srv = malloc(sizeof(struct ma_srv_s));
+    srv = (struct ma_srv_s*)malloc(sizeof(struct ma_srv_s));
     memset(srv, 0, sizeof(struct ma_srv_s));
 
     mg_mgr_init(&srv->mgr, srv);

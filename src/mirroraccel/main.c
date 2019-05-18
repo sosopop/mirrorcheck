@@ -1,6 +1,8 @@
 #include "mirroraccel.h"
 #include <stdio.h>
 #include <assert.h>
+#include <curl/curl.h>
+
 #ifdef WIN32
 #include <crtdbg.h>
 #include <stdlib.h>
