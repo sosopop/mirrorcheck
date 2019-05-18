@@ -59,7 +59,7 @@ struct ma_actual_call
 
 static void *ma_thread_create_thunk(void *arg)
 {
-    struct ma_actual_call *ac = arg;
+    struct ma_actual_call *ac = (struct ma_actual_call *)arg;
     unsigned int (*func)(void *) = ac->func;
     void *real_arg = ac->arg;
 
@@ -72,8 +72,8 @@ static void *ma_thread_create_thunk(void *arg)
 
 ma_thread_t ma_thread_create(unsigned int (*func)(void *), void *arg)
 {
-    ma_thread_t t = malloc(sizeof(pthread_t));
-    struct ma_actual_call *ac = malloc(sizeof(struct ma_actual_call));
+    ma_thread_t t = (ma_thread_t)malloc(sizeof(pthread_t));
+    struct ma_actual_call *ac = (struct ma_actual_call *)malloc(sizeof(struct ma_actual_call));
     if (!(ac && t))
         goto err;
 

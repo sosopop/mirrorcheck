@@ -1,5 +1,6 @@
 include_directories("../../3rdparty/mongoose")
 include_directories("../../3rdparty/mbedtls/include")
+include_directories("../../3rdparty/curl/include")
 
 aux_source_directory(. MA_SOURCE)
 
@@ -10,10 +11,13 @@ if(WIN32)
 endif()
 
 list(APPEND LINK_LIB 
-mongoose 
 mbedcrypto 
 mbedtls 
 mbedx509 
+zlibstatic
+curl 
+cares 
+mongoose 
 )
 
 if(WIN32)

@@ -62,9 +62,17 @@ if(UNIX)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 endif()
 
+if(ANDROID)
+    set(HAVE_POLL_FINE_EXITCODE "0" CACHE STRING "Result from TRY_RUN" FORCE)
+    set(HAVE_POLL_FINE_EXITCODE__TRYRUN_OUTPUT "" CACHE STRING "Output from TRY_RUN" FORCE)
+endif()
+
 #set(MBEDTLS_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/mbedtls/include" CACHE STRING "" FORCE)
 
+add_subdirectory(3rdparty/zlib)
 add_subdirectory(3rdparty/mongoose)
+add_subdirectory(3rdparty/curl)
+add_subdirectory(3rdparty/c-ares)
 add_subdirectory(3rdparty/mbedtls)
 add_subdirectory(src/mirroraccel)
 
