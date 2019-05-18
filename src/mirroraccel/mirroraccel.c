@@ -65,15 +65,18 @@ static const char *json_response(int code)
 
 static void parse_mirrors_array(const char *str, int len, void *user_data)
 {
+    struct ma_accel_vir_conn_s * vc = (struct ma_accel_vir_conn_s *)user_data;
     struct json_token t;
     int i;
-    printf("Parsing array: %.*s\n", len, str);
     for (i = 0; json_scanf_array_elem(str, len, "", i, &t) > 0; i++)
     {
-        printf("Index %d, token [%.*s]\n", i, t.len, t.ptr);
         char *url = NULL;
         json_scanf(t.ptr, t.len, "{url:%Q}", &url);
-        printf("%s", url);
+        if (url) {
+            struct ma_mirror_item_s* item = (struct ma_mirror_item_s*)malloc(sizeof(struct ma_mirror_item_s));
+            item->url = url;
+            QUEUE_INSERT_TAIL(&vc->mirror_items, item);
+        }
     }
 }
 
@@ -82,16 +85,21 @@ static int api_conn_new(struct mg_connection *nc, int ev, void *p, void *user_da
     int ret = 0;
     struct http_message *hm = (struct http_message *)p;
     struct ma_accel_vir_conn_s *vc = 0;
-
     if (user_data)
     {
         ret = -1;
         goto cleanup;
     }
+
     vc = (struct ma_accel_vir_conn_s *)malloc(sizeof(struct ma_accel_vir_conn_s));
-    nc->user_data = vc;
+    memset(vc, 0, sizeof(struct ma_accel_vir_conn_s));
+    QUEUE_INIT(&vc->mirror_items);
     vc->type = MA_CONN_TYPE_VC;
-    json_scanf(hm->body.p, hm->body.len, "{targets:%M}", parse_mirrors_array, nc);
+
+    nc->user_data = vc;
+
+    json_scanf(hm->body.p, hm->body.len, "{targets:%M}", parse_mirrors_array, vc);
+
 cleanup:
     if (ret)
     {
@@ -123,15 +131,15 @@ static void ev_handler(struct mg_connection *nc, int ev, void *p, void *user_dat
         struct http_message *hm = (struct http_message *)p;
         if (mg_vcmp(&hm->uri, "/api/conn") == 0)
         {
-            if (mg_vcmp(&hm->method, "POST"))
+            if (mg_vcmp(&hm->method, "POST") == 0)
             {
                 api_conn_new(nc, ev, p, user_data);
             }
-            else if (mg_vcmp(&hm->method, "DELETE"))
+            else if (mg_vcmp(&hm->method, "DELETE") == 0)
             {
                 api_conn_delete(nc, ev, p, user_data);
             }
-            else if (mg_vcmp(&hm->method, "GET"))
+            else if (mg_vcmp(&hm->method, "GET") == 0)
             {
                 api_conn_get(nc, ev, p, user_data);
             }

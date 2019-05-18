@@ -39,8 +39,6 @@ struct ma_srv_s
 
 RB_HEAD(ma_srv_tree_s, ma_srv_s);
 
-#define MAX_URL_LEN 1024
-
 /**
  * @brief 连接类型
  */
@@ -62,7 +60,7 @@ struct ma_conn_s
 struct ma_mirror_item_s
 {
     //镜像资源完整url地址
-    char url[MAX_URL_LEN];
+    char* url;
     //curl
     CURL *curl;
     //链表内部连接
