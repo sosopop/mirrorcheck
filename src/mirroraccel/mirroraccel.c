@@ -73,23 +73,42 @@ static void parse_mirrors_array(const char *str, int len, void *user_data)
         char *url = NULL;
         json_scanf(t.ptr, t.len, "{url:%Q}", &url);
         if (url) {
+            //创建镜像连接
             struct ma_mirror_item_s* item = (struct ma_mirror_item_s*)malloc(sizeof(struct ma_mirror_item_s));
+            memset(vc, 0, sizeof(struct ma_mirror_item_s));
             item->url = url;
             QUEUE_INSERT_TAIL(&vc->mirror_items, &item->link);
         }
     }
 }
 
+static void destroy_vc( struct ma_accel_vir_conn_s* vc ) 
+{
+
+cleanup:
+    free(vc);
+}
+
+static void destroy_mirror( struct ma_mirror_item_s* item ) 
+{
+    if (item->url) {
+        free(item->url);
+        curl_easy_cleanup(item->curl);
+    }
+cleanup:
+    free(item);
+}
+
 static int api_conn_new(struct mg_connection *nc, int ev, void *p, void *user_data)
 {
-    int ret = 0;
+    int ret = -1;
     struct http_message *hm = (struct http_message *)p;
     struct ma_accel_vir_conn_s *vc = 0;
     if (user_data)
     {
-        ret = -1;
         goto cleanup;
     }
+    //创建虚拟连接
     vc = (struct ma_accel_vir_conn_s *)malloc(sizeof(struct ma_accel_vir_conn_s));
     memset(vc, 0, sizeof(struct ma_accel_vir_conn_s));
     QUEUE_INIT(&vc->mirror_items);
@@ -97,15 +116,16 @@ static int api_conn_new(struct mg_connection *nc, int ev, void *p, void *user_da
 
     nc->user_data = vc;
 
-    json_scanf(hm->body.p, hm->body.len, "{targets:%M}", parse_mirrors_array, vc);
-
+    if (json_scanf(hm->body.p, hm->body.len, "{targets:%M}", parse_mirrors_array, vc) < 0) {
+        goto cleanup;
+    }
+    ret = 0;
 cleanup:
     if (ret)
     {
         free(vc);
         nc->user_data = 0;
     }
-
     return ret;
 }
 
@@ -132,14 +152,17 @@ static void ev_handler(struct mg_connection *nc, int ev, void *p, void *user_dat
         {
             if (mg_vcmp(&hm->method, "POST") == 0)
             {
+                //创建连接
                 api_conn_new(nc, ev, p, user_data);
             }
             else if (mg_vcmp(&hm->method, "DELETE") == 0)
             {
+                //删除连接
                 api_conn_delete(nc, ev, p, user_data);
             }
             else if (mg_vcmp(&hm->method, "GET") == 0)
             {
+                //获取连接信息
                 api_conn_get(nc, ev, p, user_data);
             }
         }
@@ -166,7 +189,7 @@ static unsigned int MA_STDCALL srv_poll_thread(void *arg)
     return 0;
 }
 
-int mirror_accel_create(const char *addr)
+int mirror_accel_create(const char *addr, const char* json_opt)
 {
     int port = 0;
     char port_buf[10] = {0};

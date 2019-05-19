@@ -61,6 +61,12 @@ struct ma_mirror_item_s
 {
     //镜像资源完整url地址
     char* url;
+    //累计请求次数
+    int request_times;
+    //累计请求大小
+    int request_size;
+    //累计失败次数
+    int request_failed;
     //curl
     CURL *curl;
     //链表内部连接

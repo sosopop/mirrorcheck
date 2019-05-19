@@ -19,7 +19,7 @@ void mirror_accel_uninit();
  * @param addr 地址，例如："0.0.0.0:0"
  * @return int 监听端口号，返回 <= 0 表示错误，一般为原因为端口被占用
  */
-int mirror_accel_create( const char* addr);
+int mirror_accel_create( const char* addr, const char* json_opt);
 
 /**
  * @brief 销毁镜像加速服务
