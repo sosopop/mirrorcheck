@@ -21,7 +21,18 @@ int main(int argc, char *argv[]) {
     _CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) | _CRTDBG_LEAK_CHECK_DF);
 #endif
     mirror_accel_init();
-    int port = mirror_accel_create("0.0.0.0:7777");
+    int port = mirror_accel_create("0.0.0.0:7777",
+    "{"\
+        "\"targets\":["\
+            "{"\
+                "\"url\":\"https://dl.360safe.com/setup.exe\""\
+            "},"\
+            "{"\
+                " \"url\":\"https://dl.360safe.com/setup.exe\""\
+            "}"\
+        "]"\
+    "}"
+    );
     if (port > 0) {
         printf("listening on port: %d \npress ENTER key to shutdown this service\n", port);
         getchar();

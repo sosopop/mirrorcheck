@@ -25,40 +25,34 @@ typedef enum
 #undef MA_ERROR_GEN
 
 /**
- * @brief 全局服务表
+ * @brief 加速服务
  */
 struct ma_srv_s
 {
     struct mg_mgr mgr;
+    //监听端口
     int port;
-    ma_thread_t thd;
+    //server线程
+    ma_thread_t thd_server;
+    //mirror线程
+    ma_thread_t thd_mirror;
+    //停止标识
     unsigned int stop_signal : 1;
-    RB_ENTRY(ma_srv_s)
-    tree_entry;
+    //镜像连接项
+    QUEUE mirror_items;
+    //服务树节点
+    RB_ENTRY(ma_srv_s) tree_entry;
 };
 
 RB_HEAD(ma_srv_tree_s, ma_srv_s);
 
 /**
- * @brief 连接类型
- */
-typedef enum
-{
-    MA_CONN_TYPE_VC = 0
-} ma_conn_type;
-
-#define MA_CONN_TYPE ma_conn_type type
-
-struct ma_conn_s
-{
-    MA_CONN_TYPE;
-};
-
-/**
- * @brief 镜像连接项
+ * @brief 镜像信息
  */
 struct ma_mirror_item_s
 {
+    //加速服务对象
+    struct ma_srv_s* srv;
     //镜像资源完整url地址
     char* url;
     //累计请求次数
@@ -67,20 +61,19 @@ struct ma_mirror_item_s
     int request_size;
     //累计失败次数
     int request_failed;
-    //curl
-    CURL *curl;
     //链表内部连接
     QUEUE link;
 };
 
 /**
- * @brief 加速虚拟连接
+ * @brief 镜像连接
  */
-struct ma_accel_vir_conn_s
+struct ma_mirror_conn_s
 {
-    MA_CONN_TYPE;
-    //镜像连接项
-    QUEUE mirror_items;
+    //加速的连接对象
+    struct ma_mirror_item_s* mirror;
+    //curl
+    CURL *curl;
 };
 
 #endif

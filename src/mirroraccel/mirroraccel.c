@@ -19,17 +19,47 @@ static int ma_srv_compare(struct ma_srv_s *a, struct ma_srv_s *b)
 
 RB_GENERATE_STATIC(ma_srv_tree_s, ma_srv_s, tree_entry, ma_srv_compare);
 
+static void destroy_mirror(struct ma_mirror_item_s* item)
+{
+    if (item->url) {
+        free(item->url);
+    }
+    free(item);
+}
+
 static void free_srv_data(struct ma_srv_s *srv)
 {
-    if (srv->thd)
+    QUEUE *mirror_list;
+
+    //é€šè¿‡å˜é‡é€šçŸ¥çº¿ç¨‹é€€å‡º
+    srv->stop_signal = 1;
+    //å…³é—­é•œåƒè¿æ¥çº¿ç¨‹
+    if (srv->thd_mirror) 
     {
-        srv->stop_signal = 1;
-        ma_thread_join(&srv->thd);
-        ma_thread_destroy(srv->thd);
+        ma_thread_join(&srv->thd_mirror);
+        ma_thread_destroy(srv->thd_mirror);
+    }
+    //å…³é—­æœåŠ¡çº¿ç¨‹
+    if (srv->thd_server)
+    {
+        ma_thread_join(&srv->thd_server);
+        ma_thread_destroy(srv->thd_server);
+    }
+    //æ¸…ç†é•œåƒä¿¡æ¯***
+    while ( !QUEUE_EMPTY(&srv->mirror_items))
+    {
+        mirror_list = QUEUE_HEAD(&srv->mirror_items);
+        QUEUE_REMOVE(mirror_list);
+
+        struct ma_mirror_item_s *item = QUEUE_DATA(mirror_list, struct ma_mirror_item_s, link);
+        destroy_mirror(item);
     }
     printf("remove port = %d \n", srv->port);
+    //ä»å…¨å±€æœåŠ¡è¡¨ä¸­åˆ é™¤
     RB_REMOVE(ma_srv_tree_s, &srv_tree, srv);
+    //é‡Šæ”¾mongooseæœåŠ¡
     mg_mgr_free(&srv->mgr);
+    
     free(srv);
 }
 
@@ -65,7 +95,7 @@ static const char *json_response(int code)
 
 static void parse_mirrors_array(const char *str, int len, void *user_data)
 {
-    struct ma_accel_vir_conn_s * vc = (struct ma_accel_vir_conn_s *)user_data;
+    struct ma_srv_s* srv = (struct ma_srv_s*)user_data;
     struct json_token t;
     int i;
     for (i = 0; json_scanf_array_elem(str, len, "", i, &t) > 0; i++)
@@ -73,74 +103,13 @@ static void parse_mirrors_array(const char *str, int len, void *user_data)
         char *url = NULL;
         json_scanf(t.ptr, t.len, "{url:%Q}", &url);
         if (url) {
-            //´´½¨¾µÏñÁ¬½Ó
+            //åˆ›å»ºé•œåƒè¿æ¥
             struct ma_mirror_item_s* item = (struct ma_mirror_item_s*)malloc(sizeof(struct ma_mirror_item_s));
-            memset(vc, 0, sizeof(struct ma_mirror_item_s));
+            memset(item, 0, sizeof(struct ma_mirror_item_s));
             item->url = url;
-            QUEUE_INSERT_TAIL(&vc->mirror_items, &item->link);
+            QUEUE_INSERT_TAIL(&srv->mirror_items, &item->link);
         }
     }
-}
-
-static void destroy_vc( struct ma_accel_vir_conn_s* vc ) 
-{
-
-cleanup:
-    free(vc);
-}
-
-static void destroy_mirror( struct ma_mirror_item_s* item ) 
-{
-    if (item->url) {
-        free(item->url);
-        curl_easy_cleanup(item->curl);
-    }
-cleanup:
-    free(item);
-}
-
-static int api_conn_new(struct mg_connection *nc, int ev, void *p, void *user_data)
-{
-    int ret = -1;
-    struct http_message *hm = (struct http_message *)p;
-    struct ma_accel_vir_conn_s *vc = 0;
-    if (user_data)
-    {
-        goto cleanup;
-    }
-    //´´½¨ĞéÄâÁ¬½Ó
-    vc = (struct ma_accel_vir_conn_s *)malloc(sizeof(struct ma_accel_vir_conn_s));
-    memset(vc, 0, sizeof(struct ma_accel_vir_conn_s));
-    QUEUE_INIT(&vc->mirror_items);
-    vc->type = MA_CONN_TYPE_VC;
-
-    nc->user_data = vc;
-
-    if (json_scanf(hm->body.p, hm->body.len, "{targets:%M}", parse_mirrors_array, vc) < 0) {
-        goto cleanup;
-    }
-    ret = 0;
-cleanup:
-    if (ret)
-    {
-        free(vc);
-        nc->user_data = 0;
-    }
-    return ret;
-}
-
-static int api_conn_delete(struct mg_connection *nc, int ev, void *p, void *user_data)
-{
-    int ret = 0;
-    struct http_message *hm = (struct http_message *)p;
-    return ret;
-}
-
-static int api_conn_get(struct mg_connection *nc, int ev, void *p, void *user_data)
-{
-    int ret = 0;
-    struct http_message *hm = (struct http_message *)p;
-    return ret;
 }
 
 static void ev_handler(struct mg_connection *nc, int ev, void *p, void *user_data)
@@ -148,25 +117,7 @@ static void ev_handler(struct mg_connection *nc, int ev, void *p, void *user_dat
     if (ev == MG_EV_HTTP_REQUEST)
     {
         struct http_message *hm = (struct http_message *)p;
-        if (mg_vcmp(&hm->uri, "/api/conn") == 0)
-        {
-            if (mg_vcmp(&hm->method, "POST") == 0)
-            {
-                //´´½¨Á¬½Ó
-                api_conn_new(nc, ev, p, user_data);
-            }
-            else if (mg_vcmp(&hm->method, "DELETE") == 0)
-            {
-                //É¾³ıÁ¬½Ó
-                api_conn_delete(nc, ev, p, user_data);
-            }
-            else if (mg_vcmp(&hm->method, "GET") == 0)
-            {
-                //»ñÈ¡Á¬½ÓĞÅÏ¢
-                api_conn_get(nc, ev, p, user_data);
-            }
-        }
-        else if (start_with(&hm->uri, "/stream/") == 0)
+        if (start_with(&hm->uri, "/stream/") == 0)
         {
             mg_send_head(nc, 200, sizeof("world") - 1, 0);
             mg_send(nc, "world", sizeof("world") - 1);
@@ -197,9 +148,23 @@ int mirror_accel_create(const char *addr, const char* json_opt)
     struct ma_srv_s *srv = 0;
 
     ma_mutex_acquire(&mtx_srv);
+
+    //åˆå§‹åŒ–server
     srv = (struct ma_srv_s *)malloc(sizeof(struct ma_srv_s));
     memset(srv, 0, sizeof(struct ma_srv_s));
+    QUEUE_INIT(&srv->mirror_items);
 
+    //è§£æjsoné€‰é¡¹
+    if (!json_opt || !json_opt[0])
+    {
+        goto cleanup;
+    }
+    if (json_scanf(json_opt, strlen(json_opt), "{targets:%M}", parse_mirrors_array, srv) < 0) 
+    {
+        goto cleanup;
+    }
+
+    //åˆå§‹åŒ–mongooseæœåŠ¡å™¨
     mg_mgr_init(&srv->mgr, srv);
     nc = mg_bind(&srv->mgr, addr, ev_handler, 0);
     if (nc == NULL)
@@ -208,19 +173,23 @@ int mirror_accel_create(const char *addr, const char* json_opt)
         goto cleanup;
     }
     mg_set_protocol_http_websocket(nc);
+    //è·å–ç›‘å¬ç«¯å£
     mg_conn_addr_to_str(nc, port_buf, sizeof(port_buf), MG_SOCK_STRINGIFY_PORT);
     port = atoi(port_buf);
     srv->port = port;
     printf("create port = %d \n", port);
+
+    //åŠ å…¥åˆ°æœåŠ¡æ ‘
     RB_INSERT(ma_srv_tree_s, &srv_tree, srv);
-    srv->thd = ma_thread_create(srv_poll_thread, srv);
+
+    //åˆ›å»ºmongooseäº‹ä»¶å¾ªç¯çº¿ç¨‹
+    srv->thd_server = ma_thread_create(srv_poll_thread, srv);
 cleanup:
     if (port <= 0)
     {
         if (srv)
         {
-            mg_mgr_free(&srv->mgr);
-            free(srv);
+            free_srv_data(srv);
         }
     }
     ma_mutex_release(&mtx_srv);
