@@ -1,4 +1,4 @@
-#include "mirroraccel_mgr.h"
+#include "mirroraccel_servermgr.h"
 #include "mirroraccel_thread.h"
 
 void mirror_accel_init()

@@ -1,21 +1,11 @@
-#include "mirroraccel_mgr.h"
+#include "mirroraccel_util.h"
 
-MirrorAccelMgr::MirrorAccelMgr()
+mirroraccel::Util::Util()
 {
 
 }
 
-MirrorAccelMgr::~MirrorAccelMgr()
-{
-
-}
-
-void MirrorAccelMgr::init()
-{
-
-}
-
-void MirrorAccelMgr::uninit()
+mirroraccel::Util::~Util()
 {
 
 }

@@ -1,21 +1,11 @@
-#include "mirroraccel_mgr.h"
+#include "mirroraccel_server.h"
 
-MirrorAccelMgr::MirrorAccelMgr()
+mirroraccel::Server::Server()
 {
 
 }
 
-MirrorAccelMgr::~MirrorAccelMgr()
-{
-
-}
-
-void MirrorAccelMgr::init()
-{
-
-}
-
-void MirrorAccelMgr::uninit()
+mirroraccel::Server::~Server()
 {
 
 }

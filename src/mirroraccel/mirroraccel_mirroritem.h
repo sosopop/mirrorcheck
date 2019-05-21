@@ -1,16 +1,13 @@
-#ifndef MIRRORACCEL_INTER_H_
-#define MIRRORACCEL_INTER_H_
+#ifndef MIRRORACCEL_MIRRORITEM_H_
+#define MIRRORACCEL_MIRRORITEM_H_
 
-#include "mirroraccel.h"
-
-class MirrorAccelMgr
+namespace mirroraccel
 {
-public:
-    MirrorAccelMgr();
-    ~MirrorAccelMgr();
-public:
-    void init();
-    void uninit();
-};
-
+    class MirrorItem
+    {
+    public:
+        MirrorItem();
+        ~MirrorItem();
+    };
+}
 #endif

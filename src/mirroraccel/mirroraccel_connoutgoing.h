@@ -1,16 +1,13 @@
-#ifndef MIRRORACCEL_INTER_H_
-#define MIRRORACCEL_INTER_H_
+#ifndef MIRRORACCEL_CONNOUTGOING_H_
+#define MIRRORACCEL_CONNOUTGOING_H_
 
-#include "mirroraccel.h"
-
-class MirrorAccelMgr
+namespace mirroraccel
 {
-public:
-    MirrorAccelMgr();
-    ~MirrorAccelMgr();
-public:
-    void init();
-    void uninit();
-};
-
+    class ConnOutgoing
+    {
+    public:
+        ConnOutgoing();
+        ~ConnOutgoing();
+    };
+}
 #endif

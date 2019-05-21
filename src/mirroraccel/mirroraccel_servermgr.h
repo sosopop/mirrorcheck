@@ -1,16 +1,18 @@
-#ifndef MIRRORACCEL_INTER_H_
-#define MIRRORACCEL_INTER_H_
+#ifndef MIRRORACCEL_SERVERMGR_H_
+#define MIRRORACCEL_SERVERMGR_H_
 
 #include "mirroraccel.h"
 
-class MirrorAccelMgr
+namespace mirroraccel
+{
+class ServerMgr
 {
 public:
-    MirrorAccelMgr();
-    ~MirrorAccelMgr();
+    ServerMgr();
+    ~ServerMgr();
 public:
     void init();
     void uninit();
 };
-
+}
 #endif
