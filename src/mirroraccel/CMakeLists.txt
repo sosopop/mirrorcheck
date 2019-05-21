@@ -36,6 +36,7 @@ if(ANDROID)
     #error: Android 5.0 and later only support position-independent executables (-fPIE).
     list(APPEND LINK_LIB "-fPIE -pie")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIE")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIE")
 endif()
 
 add_executable(mirroraccel ${MA_SOURCE})
