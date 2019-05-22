@@ -19,7 +19,6 @@ zlibstatic
 curl 
 cares 
 mongoose 
-frozen
 )
 
 if(WIN32)

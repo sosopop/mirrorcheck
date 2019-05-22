@@ -1,6 +1,7 @@
 #include "mirroraccel_connincoming.h"
 
-mirroraccel::ConnIncoming::ConnIncoming()
+mirroraccel::ConnIncoming::ConnIncoming(mg_connection* nc):
+    nc(nc)
 {
 
 }

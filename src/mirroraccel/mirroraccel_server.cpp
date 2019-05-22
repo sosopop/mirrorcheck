@@ -1,69 +1,100 @@
 #include "mirroraccel_server.h"
+#include "mirroraccel_mirroritem.h"
+#include "mirroraccel_connincoming.h"
 
 mirroraccel::Server::Server(
 	const std::string & addr, 
 	const std::string & jsonOption)
 {
-	int port = 0;
-	char port_buf[10] = { 0 };
-	struct mg_connection *nc;
-	struct ma_srv_s *srv = 0;
+    if (jsonOption.empty())
+        throw std::exception("json empty");
 
-	ma_mutex_acquire(&mtx_srv);
+    nlohmann::json&& json = nlohmann::json::parse(jsonOption);
+    nlohmann::json& targets = json["targets"];
+    if (!targets.is_array())
+        throw std::exception("invalid json");
 
-	//初始化server
-	srv = (struct ma_srv_s *)malloc(sizeof(struct ma_srv_s));
-	memset(srv, 0, sizeof(struct ma_srv_s));
-	QUEUE_INIT(&srv->mirror_items);
+    for (auto& item : targets) {
+        auto urlJson = item["url"];
+        if (!urlJson.is_string())
+            throw std::exception("invalid json");
 
-	//解析json选项
-	if (!json_opt || !json_opt[0])
-	{
-		goto cleanup;
-	}
-	if (json_scanf(json_opt, strlen(json_opt), "{targets:%M}", parse_mirrors_array, srv) < 0)
-	{
-		goto cleanup;
-	}
+        std::string url = urlJson;
+        if (url.empty())
+            throw std::exception("invalid mirror url");
 
-	//初始化mongoose服务器
-	mg_mgr_init(&srv->mgr, srv);
-	nc = mg_bind(&srv->mgr, addr, ev_handler, 0);
-	if (nc == NULL)
-	{
-		printf("failed to create listener\n");
-		goto cleanup;
-	}
-	mg_set_protocol_http_websocket(nc);
+        std::lock_guard<std::mutex> lock(mirrorsMux);
+        mirrors.push_back(std::make_shared<MirrorItem>(url));
+    }
+
+    if (mirrors.size() == 0)
+        throw std::exception("mirrors empty");
+
+	mg_mgr_init(&mgr, this);
+    mg_connection* conn = mg_bind(&mgr, addr.c_str(), eventHandler, 0);
+    if (conn == nullptr)
+        throw std::exception("can't bind address");
+
+	mg_set_protocol_http_websocket(conn);
+
+    char portBuf[10] = { 0 };
 	//获取监听端口
-	mg_conn_addr_to_str(nc, port_buf, sizeof(port_buf), MG_SOCK_STRINGIFY_PORT);
-	port = atoi(port_buf);
-	srv->port = port;
-	printf("create port = %d \n", port);
+	mg_conn_addr_to_str(conn, portBuf, sizeof(portBuf), MG_SOCK_STRINGIFY_PORT);
+	port = atoi(portBuf);
 
-	//加入到服务树
-	RB_INSERT(ma_srv_tree_s, &srv_tree, srv);
-
-	//创建mongoose事件循环线程
-	srv->thd_server = ma_thread_create(srv_poll_thread, srv);
-cleanup:
-	if (port <= 0)
-	{
-		if (srv)
-		{
-			free_srv_data(srv);
-		}
-	}
-	ma_mutex_release(&mtx_srv);
-	return port;
+    //启动监听线程
+    pollThread.reset(new std::thread([this] {
+        while (!stopSignal)
+        {
+            mg_mgr_poll(&mgr, 100);
+        }
+    }));
 }
 
 mirroraccel::Server::~Server()
 {
-
+    stopSignal = true;
+    mg_mgr_free(&mgr);
+    pollThread->join();
 }
 
 int mirroraccel::Server::getPort()
 {
 	return port;
+}
+
+namespace {
+    int startWith(const struct mg_str *str1, const char *str2)
+    {
+        size_t i = 0;
+        while (str2[i] && i < str1->len && str2[i] == str1->p[i])
+            i++;
+        return str2[i];
+    }
+}
+
+void mirroraccel::Server::eventHandler(struct mg_connection *nc, int ev, void *p, void *user_data)
+{
+    if (ev == MG_EV_HTTP_REQUEST)
+    {
+        struct http_message *hm = (struct http_message *)p;
+        if (startWith(&hm->uri, "/stream/") == 0)
+        {
+            ConnIncoming* conn = new ConnIncoming(nc);
+            nc->user_data = conn;
+            mg_send_head(nc, 200, sizeof("world") - 1, 0);
+            mg_send(nc, "world", sizeof("world") - 1);
+        }
+        else
+        {
+            mg_send_head(nc, 200, sizeof("!!!") - 1, 0);
+            mg_send(nc, "!!!", sizeof("!!!") - 1);
+        }
+    }
+    else if (ev == MG_EV_CLOSE) {
+        if (nc->user_data) {
+            ConnIncoming* conn = (ConnIncoming*)nc->user_data;
+            delete conn;
+        }
+    }
 }

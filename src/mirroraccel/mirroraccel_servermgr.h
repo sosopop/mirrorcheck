@@ -5,6 +5,7 @@
 #include <string>
 #include <map>
 #include <memory>
+#include <mutex>
 
 namespace mirroraccel
 {
@@ -23,6 +24,7 @@ namespace mirroraccel
 		void destroy(
 			int port);
 	private:
+        std::mutex srvMux;
 		std::map<int, std::shared_ptr<Server>> servers;
 	};
 }
