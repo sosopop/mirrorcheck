@@ -1,4 +1,5 @@
 #include "mirroraccel_servermgr.h"
+#include "mirroraccel_server.h"
 
 mirroraccel::ServerMgr::ServerMgr()
 {
@@ -10,12 +11,17 @@ mirroraccel::ServerMgr::~ServerMgr()
 
 }
 
-void mirroraccel::ServerMgr::init()
+int mirroraccel::ServerMgr::create(
+	const std::string& addr, 
+	const std::string& jsonOption )
 {
-
+	std::shared_ptr<Server> server(new Server());
+	server->
+	return 0;
 }
 
-void mirroraccel::ServerMgr::uninit()
+void mirroraccel::ServerMgr::destroy(
+	int port )
 {
 
 }

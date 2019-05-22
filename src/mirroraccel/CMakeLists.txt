@@ -1,5 +1,5 @@
 include_directories("../../3rdparty/mongoose")
-include_directories("../../3rdparty/frozen")
+include_directories("../../3rdparty/nlohmann")
 include_directories("../../3rdparty/mbedtls/include")
 include_directories("../../3rdparty/curl/include")
 

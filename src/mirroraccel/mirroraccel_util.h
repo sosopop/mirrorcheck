@@ -3,11 +3,9 @@
 
 namespace mirroraccel
 {
-class Util
-{
-public:
-    Util();
-    ~Util();
-};
+	namespace util
+	{
+
+	};
 }
 #endif
