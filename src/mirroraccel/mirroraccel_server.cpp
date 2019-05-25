@@ -78,12 +78,13 @@ int startWith(const struct mg_str *str1, const char *str2)
 
 void mirroraccel::Server::eventHandler(struct mg_connection *nc, int ev, void *p, void *user_data)
 {
+    Server *srv = static_cast<Server *>(nc->mgr->user_data);
     if (ev == MG_EV_HTTP_REQUEST)
     {
         struct http_message *hm = (struct http_message *)p;
         if (startWith(&hm->uri, "/stream/") == 0)
         {
-            ConnIncoming *conn = new ConnIncoming(nc);
+            ConnIncoming *conn = new ConnIncoming(srv);
             nc->user_data = conn;
             mg_send_head(nc, 200, sizeof("world") - 1, 0);
             mg_send(nc, "world", sizeof("world") - 1);
@@ -102,4 +103,11 @@ void mirroraccel::Server::eventHandler(struct mg_connection *nc, int ev, void *p
             delete conn;
         }
     }
+}
+
+mirroraccel::MirrorList mirroraccel::Server::getMirrorList()
+{
+    std::lock_guard<std::mutex> lock(mirrorsMux);
+    mirroraccel::MirrorList ml = mirrors;
+    return ml;
 }

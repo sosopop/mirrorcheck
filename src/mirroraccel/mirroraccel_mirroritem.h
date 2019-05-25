@@ -4,13 +4,17 @@
 
 namespace mirroraccel
 {
-    class MirrorItem
-    {
-    public:
-        MirrorItem( const std::string& url );
-        ~MirrorItem();
-    private:
-        std::string url;
-    };
-}
+class MirrorItem
+{
+public:
+    MirrorItem(const std::string &url);
+    ~MirrorItem();
+
+public:
+    std::string getUrl();
+
+private:
+    std::string url;
+};
+} // namespace mirroraccel
 #endif
