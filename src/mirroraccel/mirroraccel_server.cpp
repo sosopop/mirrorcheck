@@ -1,48 +1,50 @@
 #include "mirroraccel_server.h"
 #include "mirroraccel_mirroritem.h"
 #include "mirroraccel_connincoming.h"
+#include "mirroraccel_except.h"
 
 mirroraccel::Server::Server(
-	const std::string & addr, 
-	const std::string & jsonOption)
+    const std::string &addr,
+    const std::string &jsonOption)
 {
     if (jsonOption.empty())
-        throw std::exception("json empty");
+        throw Except("json empty");
 
-    nlohmann::json&& json = nlohmann::json::parse(jsonOption);
-    nlohmann::json& targets = json["targets"];
+    nlohmann::json &&json = nlohmann::json::parse(jsonOption);
+    nlohmann::json &targets = json["targets"];
     if (!targets.is_array())
-        throw std::exception("invalid json");
+        throw Except("invalid json");
 
-    for (auto& item : targets) {
+    for (auto &item : targets)
+    {
         auto urlJson = item["url"];
         if (!urlJson.is_string())
-            throw std::exception("invalid json");
+            throw Except("invalid json");
 
         std::string url = urlJson;
         if (url.empty())
-            throw std::exception("invalid mirror url");
+            throw Except("invalid mirror url");
 
         std::lock_guard<std::mutex> lock(mirrorsMux);
         mirrors.push_back(std::make_shared<MirrorItem>(url));
     }
 
     if (mirrors.size() == 0)
-        throw std::exception("mirrors empty");
+        throw Except("mirrors empty");
 
-	mg_mgr_init(&mgr, this);
-    mg_connection* conn = mg_bind(&mgr, addr.c_str(), eventHandler, 0);
+    mg_mgr_init(&mgr, this);
+    mg_connection *conn = mg_bind(&mgr, addr.c_str(), eventHandler, 0);
     if (conn == nullptr)
-        throw std::exception("can't bind address");
+        throw Except("can't bind address");
 
-	mg_set_protocol_http_websocket(conn);
+    mg_set_protocol_http_websocket(conn);
 
-    char portBuf[10] = { 0 };
-	//获取监听端口
-	mg_conn_addr_to_str(conn, portBuf, sizeof(portBuf), MG_SOCK_STRINGIFY_PORT);
-	port = atoi(portBuf);
+    char portBuf[10] = {0};
+    //鑾峰彇鐩戝惉绔彛
+    mg_conn_addr_to_str(conn, portBuf, sizeof(portBuf), MG_SOCK_STRINGIFY_PORT);
+    port = atoi(portBuf);
 
-    //启动监听线程
+    //鍚姩鐩戝惉绾跨▼
     pollThread.reset(new std::thread([this] {
         while (!stopSignal)
         {
@@ -60,18 +62,19 @@ mirroraccel::Server::~Server()
 
 int mirroraccel::Server::getPort()
 {
-	return port;
+    return port;
 }
 
-namespace {
-    int startWith(const struct mg_str *str1, const char *str2)
-    {
-        size_t i = 0;
-        while (str2[i] && i < str1->len && str2[i] == str1->p[i])
-            i++;
-        return str2[i];
-    }
+namespace
+{
+int startWith(const struct mg_str *str1, const char *str2)
+{
+    size_t i = 0;
+    while (str2[i] && i < str1->len && str2[i] == str1->p[i])
+        i++;
+    return str2[i];
 }
+} // namespace
 
 void mirroraccel::Server::eventHandler(struct mg_connection *nc, int ev, void *p, void *user_data)
 {
@@ -80,7 +83,7 @@ void mirroraccel::Server::eventHandler(struct mg_connection *nc, int ev, void *p
         struct http_message *hm = (struct http_message *)p;
         if (startWith(&hm->uri, "/stream/") == 0)
         {
-            ConnIncoming* conn = new ConnIncoming(nc);
+            ConnIncoming *conn = new ConnIncoming(nc);
             nc->user_data = conn;
             mg_send_head(nc, 200, sizeof("world") - 1, 0);
             mg_send(nc, "world", sizeof("world") - 1);
@@ -91,9 +94,11 @@ void mirroraccel::Server::eventHandler(struct mg_connection *nc, int ev, void *p
             mg_send(nc, "!!!", sizeof("!!!") - 1);
         }
     }
-    else if (ev == MG_EV_CLOSE) {
-        if (nc->user_data) {
-            ConnIncoming* conn = (ConnIncoming*)nc->user_data;
+    else if (ev == MG_EV_CLOSE)
+    {
+        if (nc->user_data)
+        {
+            ConnIncoming *conn = (ConnIncoming *)nc->user_data;
             delete conn;
         }
     }

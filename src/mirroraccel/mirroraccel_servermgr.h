@@ -9,23 +9,25 @@
 
 namespace mirroraccel
 {
-	class Server;
-	class ServerMgr
-	{
-	public:
-		ServerMgr();
-		~ServerMgr();
-	public:
-		//´´½¨server
-		int create(
-			const std::string& addr,
-			const std::string& jsonOption);
-		//Ïú»Ùserver
-		void destroy(
-			int port);
-	private:
-        std::mutex srvMux;
-		std::map<int, std::shared_ptr<Server>> servers;
-	};
-}
+class Server;
+class ServerMgr
+{
+public:
+	ServerMgr();
+	~ServerMgr();
+
+public:
+	//åˆ›å»ºserver
+	int create(
+		const std::string &addr,
+		const std::string &jsonOption);
+	//é”€æ¯server
+	void destroy(
+		int port);
+
+private:
+	std::mutex srvMux;
+	std::map<int, std::shared_ptr<Server>> servers;
+};
+} // namespace mirroraccel
 #endif

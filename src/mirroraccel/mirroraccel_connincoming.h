@@ -5,13 +5,14 @@
 
 namespace mirroraccel
 {
-    class ConnIncoming
-    {
-    public:
-        ConnIncoming(mg_connection* nc);
-        ~ConnIncoming();
-    private:
-        mg_connection* nc = nullptr;
-    };
-}
+class ConnIncoming
+{
+public:
+    ConnIncoming(mg_connection *nc);
+    ~ConnIncoming();
+
+private:
+    mg_connection *nc = nullptr;
+};
+} // namespace mirroraccel
 #endif
