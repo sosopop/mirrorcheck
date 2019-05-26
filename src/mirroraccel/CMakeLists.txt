@@ -5,7 +5,7 @@ include_directories("../../3rdparty/curl/include")
 
 aux_source_directory(. MA_SOURCE)
 
-add_definitions(-DMG_ENABLE_SSL -DMG_ENABLE_CALLBACK_USERDATA -DMG_ENABLE_SYNC_RESOLVER)
+add_definitions(-DCURL_STATICLIB -DMG_ENABLE_SSL -DMG_ENABLE_CALLBACK_USERDATA -DMG_ENABLE_SYNC_RESOLVER)
 
 if(WIN32)
     add_definitions(-DWIN32_LEAN_AND_MEAN)

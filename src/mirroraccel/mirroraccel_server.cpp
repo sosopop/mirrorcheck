@@ -2,6 +2,7 @@
 #include "mirroraccel_mirroritem.h"
 #include "mirroraccel_connincoming.h"
 #include "mirroraccel_except.h"
+#include "mirroraccel_util.h"
 
 mirroraccel::Server::Server(
     const std::string &addr,
@@ -25,7 +26,6 @@ mirroraccel::Server::Server(
         if (url.empty())
             throw Except("invalid mirror url");
 
-        std::lock_guard<std::mutex> lock(mirrorsMux);
         mirrors.push_back(std::make_shared<MirrorItem>(url));
     }
 
@@ -65,26 +65,45 @@ int mirroraccel::Server::getPort()
     return port;
 }
 
-namespace
-{
-int startWith(const struct mg_str *str1, const char *str2)
-{
-    size_t i = 0;
-    while (str2[i] && i < str1->len && str2[i] == str1->p[i])
-        i++;
-    return str2[i];
-}
-} // namespace
-
 void mirroraccel::Server::eventHandler(struct mg_connection *nc, int ev, void *p, void *user_data)
 {
     Server *srv = static_cast<Server *>(nc->mgr->user_data);
     if (ev == MG_EV_HTTP_REQUEST)
     {
         struct http_message *hm = (struct http_message *)p;
-        if (startWith(&hm->uri, "/stream/") == 0)
+        if (util::startWith(&hm->uri, "/stream/") == 0)
         {
-            ConnIncoming *conn = new ConnIncoming(srv);
+            /*
+            //来自 mongoose mg_http_serve_file 函数
+            int64_t r1 = 0, r2 = 0, cl = 0;
+            int n, status_code = 200;
+            char range[70] = {0};
+            struct mg_str *range_hdr = mg_get_http_header(hm, "Range");
+            if (range_hdr != NULL &&
+                (n = mg_http_parse_range_header(range_hdr, &r1, &r2)) > 0 && r1 >= 0 &&
+                r2 >= 0) {
+                // If range is specified like "400-", set second limit to content len 
+                if (n == 1) {
+                    r2 = cl - 1;
+                }
+                if (r1 > r2 || r2 >= cl) {
+                    status_code = 416;
+                    cl = 0;*/
+                    //snprintf(range, sizeof(range), "Content-Range: bytes */%" INT64_FMT "\r\n",  (int64_t)st.st_size);
+                /*}
+                else {
+                    status_code = 206;
+                    cl = r2 - r1 + 1;
+                    snprintf(range, sizeof(range), "Content-Range: bytes %" INT64_FMT
+                        "-%" INT64_FMT "/%" INT64_FMT "\r\n",
+                        r1, r1 + cl - 1, (int64_t)st.st_size);
+                }
+            }
+            */
+
+            //发起第一次请求，用于获取content-length
+            ConnIncoming *conn = new ConnIncoming(*srv, 
+                std::string(hm->uri.p, hm->uri.len),srv->mirrors);
             nc->user_data = conn;
             mg_send_head(nc, 200, sizeof("world") - 1, 0);
             mg_send(nc, "world", sizeof("world") - 1);
@@ -103,11 +122,4 @@ void mirroraccel::Server::eventHandler(struct mg_connection *nc, int ev, void *p
             delete conn;
         }
     }
-}
-
-mirroraccel::MirrorList mirroraccel::Server::getMirrorList()
-{
-    std::lock_guard<std::mutex> lock(mirrorsMux);
-    mirroraccel::MirrorList ml = mirrors;
-    return ml;
 }

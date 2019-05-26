@@ -227,10 +227,6 @@ typedef int bool;
 #include <stdbool.h>
 #endif
 
-#if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(strdup)
-#define strdup _strdup
-#endif
-
 #ifndef EINPROGRESS
 #define EINPROGRESS WSAEINPROGRESS
 #endif
@@ -6644,3 +6640,6 @@ struct mg_iface *mg_socks_mk_iface(struct mg_mgr *, const char *proxy_addr);
 
 #endif
 #endif
+
+int mg_http_parse_range_header(const struct mg_str *header, int64_t *a,
+    int64_t *b);

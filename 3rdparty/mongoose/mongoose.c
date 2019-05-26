@@ -1,4 +1,10 @@
 #include "mongoose.h"
+
+
+#if defined(_MSC_VER) && _MSC_VER >= 1800
+#define strdup _strdup
+#endif
+
 #ifdef MG_MODULE_LINES
 #line 1 "mongoose/src/mg_internal.h"
 #endif
@@ -7153,7 +7159,7 @@ static void mg_gmt_time_string(char *buf, size_t buf_len, time_t *t) {
 static void mg_gmt_time_string(char *buf, size_t buf_len, time_t *t);
 #endif
 
-static int mg_http_parse_range_header(const struct mg_str *header, int64_t *a,
+int mg_http_parse_range_header(const struct mg_str *header, int64_t *a,
                                       int64_t *b) {
   /*
    * There is no snscanf. Headers are not guaranteed to be NUL-terminated,
