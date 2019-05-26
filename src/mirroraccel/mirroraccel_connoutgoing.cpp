@@ -11,5 +11,21 @@ mirroraccel::ConnOutgoing::ConnOutgoing(
 
 mirroraccel::ConnOutgoing::~ConnOutgoing()
 {
+    curl_easy_cleanup(curl);
+}
 
+bool mirroraccel::ConnOutgoing::poll()
+{
+    switch ( status)
+    {
+    case ST_QUERY:
+        doQuery();
+    	break;
+    }
+    return true;
+}
+
+bool mirroraccel::ConnOutgoing::doQuery()
+{
+    return true;
 }

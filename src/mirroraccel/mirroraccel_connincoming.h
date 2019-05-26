@@ -23,6 +23,9 @@ public:
 
     ~ConnIncoming();
 
+public:
+    bool waitEvent();
+
 private:
     //connection stop signal
     bool stopSignal = false;
