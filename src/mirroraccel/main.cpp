@@ -19,6 +19,7 @@ int main(int argc, char *argv[]) {
 #ifdef WIN32
     atexit(exit_handle);
     _CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) | _CRTDBG_LEAK_CHECK_DF);
+    //_CrtSetBreakAlloc(269);
 #endif
     mirror_accel_init();
     int port = mirror_accel_create("0.0.0.0:7777",

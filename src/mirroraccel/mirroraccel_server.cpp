@@ -3,6 +3,7 @@
 #include "mirroraccel_connincoming.h"
 #include "mirroraccel_except.h"
 #include "mirroraccel_util.h"
+#include "mirroraccel_request.h"
 
 mirroraccel::Server::Server(
     const std::string &addr,
@@ -56,13 +57,18 @@ mirroraccel::Server::Server(
 mirroraccel::Server::~Server()
 {
     stopSignal = true;
-    mg_mgr_free(&mgr);
     pollThread->join();
+    mg_mgr_free(&mgr);
 }
 
 int mirroraccel::Server::getPort()
 {
     return port;
+}
+
+std::vector<std::shared_ptr<mirroraccel::MirrorItem>>& mirroraccel::Server::getMirrors()
+{
+    return mirrors;
 }
 
 void mirroraccel::Server::eventHandler(struct mg_connection *nc, int ev, void *p, void *user_data)
@@ -100,10 +106,15 @@ void mirroraccel::Server::eventHandler(struct mg_connection *nc, int ev, void *p
                 }
             }
             */
+            ConnIncoming *conn = nullptr;
+            if (nc->user_data) {
+                conn = static_cast<ConnIncoming *>(nc->user_data);
+            }
+            else {
+                //发起第一次请求，用于获取content-length
+                conn = new ConnIncoming(*srv, std::make_shared<Request>(hm));
+            }
 
-            //发起第一次请求，用于获取content-length
-            ConnIncoming *conn = new ConnIncoming(*srv, 
-                std::string(hm->uri.p, hm->uri.len),srv->mirrors);
             nc->user_data = conn;
             mg_send_head(nc, 200, sizeof("world") - 1, 0);
             mg_send(nc, "world", sizeof("world") - 1);
@@ -118,7 +129,7 @@ void mirroraccel::Server::eventHandler(struct mg_connection *nc, int ev, void *p
     {
         if (nc->user_data)
         {
-            ConnIncoming *conn = (ConnIncoming *)nc->user_data;
+            ConnIncoming *conn = static_cast<ConnIncoming *>(nc->user_data);
             delete conn;
         }
     }

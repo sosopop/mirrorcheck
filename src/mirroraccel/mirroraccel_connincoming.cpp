@@ -5,12 +5,15 @@
 
 mirroraccel::ConnIncoming::ConnIncoming(
     Server& server,
-    const std::string& url,
-    std::vector<std::shared_ptr<MirrorItem>> mirrors) :
-    server(server), mirrors(mirrors), url(url)
+    std::shared_ptr<Request> request) :
+    server(server),
+    request(request)
 {
+    curlMutil = curl_multi_init();
+
+    std::vector<std::shared_ptr<MirrorItem>>& mirrors = server.getMirrors();
     //生成连接
-    for (auto& item : this->mirrors)
+    for (auto& item : mirrors)
     {
         std::shared_ptr<ConnOutgoing> outgoing = std::make_shared<ConnOutgoing>(item, *this);
         conns.push_back(outgoing);
@@ -19,7 +22,7 @@ mirroraccel::ConnIncoming::ConnIncoming(
     //启动监听线程
     pollThread.reset(new std::thread([this] {
         //生成连接
-        while (stopSignal)
+        while (!stopSignal)
         {
             //等待事件
             waitEvent();
@@ -29,17 +32,28 @@ mirroraccel::ConnIncoming::ConnIncoming(
                 co->poll();
             }
         }
-        //清理连接
-        conns.clear();
     }));
 }
 
 mirroraccel::ConnIncoming::~ConnIncoming()
 {
-
+    stopSignal = true;
+    pollThread->join();
+    conns.clear();
+    curl_multi_cleanup(curlMutil);
 }
 
 bool mirroraccel::ConnIncoming::waitEvent()
 {
     return true;
+}
+
+std::shared_ptr<mirroraccel::Request> mirroraccel::ConnIncoming::getRequest()
+{
+    return request;
+}
+
+CURLM * mirroraccel::ConnIncoming::handle()
+{
+    return curlMutil;
 }

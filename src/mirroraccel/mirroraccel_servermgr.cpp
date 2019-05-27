@@ -1,15 +1,17 @@
 #include "mirroraccel_servermgr.h"
 #include "mirroraccel_server.h"
+#include "curl/curl.h"
 
 mirroraccel::ServerMgr::ServerMgr()
 {
-
+    curl_global_init(CURL_GLOBAL_ALL);
 }
 
 mirroraccel::ServerMgr::~ServerMgr()
 {
     std::lock_guard<std::mutex> lock(srvMux);
     servers.clear();
+    curl_global_cleanup();
 }
 
 int mirroraccel::ServerMgr::create(

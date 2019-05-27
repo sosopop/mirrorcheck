@@ -15,11 +15,14 @@ namespace mirroraccel
         ConnOutgoing(
             std::shared_ptr<MirrorItem> mirror,
             ConnIncoming& incoming);
-
         ~ConnOutgoing();
+
     public:
+        //轮询任务
         bool poll();
+        //查询任务
         bool doQuery();
+
     private:
         enum Status {
             ST_QUERY = 0,

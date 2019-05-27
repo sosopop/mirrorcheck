@@ -20,7 +20,7 @@ public:
 
 public:
     int getPort();
-
+    std::vector<std::shared_ptr<MirrorItem>>& getMirrors();
 private:
     static void eventHandler(struct mg_connection *nc, int ev, void *p, void *user_data);
 

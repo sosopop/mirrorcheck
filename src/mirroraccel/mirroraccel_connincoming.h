@@ -2,6 +2,7 @@
 #define MIRRORACCEL_CONNINCOMING_H_
 
 #include "mongoose.h"
+#include "curl/curl.h"
 #include <list>
 #include <thread>
 #include <memory>
@@ -12,19 +13,24 @@ namespace mirroraccel
 class Server;
 class ConnOutgoing;
 class MirrorItem;
+class Request;
 
 class ConnIncoming
 {
+    friend class ConnOutgoing;
 public:
     ConnIncoming(
         Server& server,
-        const std::string& url,
-        std::vector<std::shared_ptr<MirrorItem>> mirrors);
+        std::shared_ptr<Request> request);
 
     ~ConnIncoming();
 
 public:
     bool waitEvent();
+    std::shared_ptr<Request> getRequest();
+
+private:
+    CURLM* handle();
 
 private:
     //connection stop signal
@@ -33,8 +39,6 @@ private:
     std::shared_ptr<std::thread> pollThread = nullptr;
     //HTTP server
     Server& server;
-    //mirror information
-    std::vector<std::shared_ptr<MirrorItem>> mirrors;
     //mirror connections
     std::vector<std::shared_ptr<ConnOutgoing>>  conns;
     std::mutex connMux;
@@ -42,6 +46,10 @@ private:
     std::string url;
     //HTTP range
     std::pair<std::int64_t, std::int64_t> range;
+    //curl multi handle
+    CURLM* curlMutil = nullptr;
+    //HTTP request
+    std::shared_ptr<Request> request;
 };
 } // namespace mirroraccel
 #endif

@@ -1,5 +1,9 @@
 #include "mongoose.h"
 
+#if CS_PLATFORM == CS_P_WINDOWS
+#define snprintf _snprintf
+#define vsnprintf _vsnprintf
+#endif
 
 #if defined(_MSC_VER) && _MSC_VER >= 1800
 #define strdup _strdup
