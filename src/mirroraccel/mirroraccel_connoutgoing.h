@@ -6,35 +6,37 @@
 
 namespace mirroraccel
 {
-    class MirrorItem;
-    class ConnIncoming;
+class MirrorItem;
+class ConnIncoming;
 
-    class ConnOutgoing
+class ConnOutgoing
+{
+public:
+    ConnOutgoing(
+        std::shared_ptr<MirrorItem> mirror,
+        ConnIncoming &incoming);
+    ~ConnOutgoing();
+
+public:
+    //杞浠诲姟
+    bool poll();
+    //鏌ヨ浠诲姟
+    bool doQuery();
+
+private:
+    enum Status
     {
-    public:
-        ConnOutgoing(
-            std::shared_ptr<MirrorItem> mirror,
-            ConnIncoming& incoming);
-        ~ConnOutgoing();
-
-    public:
-        //轮询任务
-        bool poll();
-        //查询任务
-        bool doQuery();
-
-    private:
-        enum Status {
-            ST_QUERY = 0,
-            ST_REQUEST,
-            ST_CLOSE
-        };
-    private:
-        bool stopSignal = false;
-        Status status = ST_QUERY;
-        ConnIncoming& incoming;
-        std::shared_ptr<MirrorItem> mirror;
-        CURL* curl = nullptr;
+        ST_QUERY = 0,
+        ST_REQUEST,
+        ST_CLOSE
     };
-}
+
+private:
+    bool stopSignal = false;
+    Status status = ST_QUERY;
+    ConnIncoming &incoming;
+    std::shared_ptr<MirrorItem> mirror;
+    CURL *curl = nullptr;
+};
+} // namespace mirroraccel
 #endif

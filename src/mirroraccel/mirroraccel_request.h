@@ -6,67 +6,71 @@
 
 namespace mirroraccel
 {
-	class Request
-	{
-    public:
-		Request(struct http_message* hm);
-        ~Request();
-	private:
-		//½ûÖ¹¿½±´
-		Request(Request& r) {};
-		Request& operator =(Request& r) { return *this; };
-    public:
-        std::string getUrl( const std::string& base );
-        struct curl_slist* getHeaders();
-    private:
-        std::string host;
-        std::string url;
-        std::string qs;
-        struct curl_slist* headers = nullptr;
-	};
+class Request
+{
+public:
+    Request(struct http_message *hm);
+    ~Request();
 
-    inline Request::Request(struct http_message* hm) :
-        url(hm->uri.p, hm->uri.len),
-        qs(hm->query_string.p, hm->query_string.len)
+private:
+    //ç¦æ­¢æ‹·è´
+    Request(Request &r){};
+    Request &operator=(Request &r) { return *this; };
+
+public:
+    std::string getUrl(const std::string &base);
+    struct curl_slist *getHeaders();
+
+private:
+    std::string host;
+    std::string url;
+    std::string qs;
+    struct curl_slist *headers = nullptr;
+};
+
+inline Request::Request(struct http_message *hm) : url(hm->uri.p, hm->uri.len),
+                                                   qs(hm->query_string.p, hm->query_string.len)
+{
+    for (int i = 0; hm->header_names[i].len; i++)
     {
-        for (int i = 0; hm->header_names[i].len; i++)
+        //è·³è¿‡hostï¼Œåé¢éœ€è¦æ›¿æ¢
+        if (mg_vcasecmp(&hm->header_names[i], "Host") == 0)
         {
-            //Ìø¹ıhost£¬ºóÃæĞèÒªÌæ»»
-            if (mg_vcasecmp(&hm->header_names[i], "Host") == 0)
-            {
-                host.assign(hm->header_values[i].p, hm->header_values[i].len);
-                continue;
-            }
-            //Ìø¹ırange£¬ºóÃæĞèÒªÌæ»»
-            //if (mg_strncmp(hm->header_names[i], "Range") == 0)
-            //{
-            //    continue;
-            //}
-
-            headers = curl_slist_append(
-                headers,
-                (std::string(hm->header_names[i].p, hm->header_names[i].len) +
-                ":" +
-                std::string(hm->header_values[i].p, hm->header_values[i].len)).c_str());
+            host.assign(hm->header_values[i].p, hm->header_values[i].len);
+            continue;
         }
-    }
+        //è·³è¿‡rangeï¼Œåé¢éœ€è¦æ›¿æ¢
+        //if (mg_strncmp(hm->header_names[i], "Range") == 0)
+        //{
+        //    continue;
+        //}
 
-    inline Request::~Request()
-    {
-        if (headers) {
-            curl_slist_free_all(headers);
-        }
+        headers = curl_slist_append(
+            headers,
+            (std::string(hm->header_names[i].p, hm->header_names[i].len) +
+             ":" +
+             std::string(hm->header_values[i].p, hm->header_values[i].len))
+                .c_str());
     }
-
-    inline std::string Request::getUrl(const std::string& base)
-    {
-        return base + url + "?" + qs;
-    }
-
-    inline struct curl_slist* Request::getHeaders()
-    {
-        return headers;
-    }
-
 }
+
+inline Request::~Request()
+{
+    if (headers)
+    {
+        curl_slist_free_all(headers);
+    }
+}
+
+inline std::string Request::getUrl(const std::string &base)
+{
+    return base + url + "?" + qs;
+}
+
+inline struct curl_slist *Request::getHeaders()
+{
+    return headers;
+}
+
+} // namespace mirroraccel
 #endif
