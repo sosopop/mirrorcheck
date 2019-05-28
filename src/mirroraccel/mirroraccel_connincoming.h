@@ -26,10 +26,11 @@ public:
     ~ConnIncoming();
 
 public:
-    bool waitEvent();
 	Request& getRequest();
+    void reset();
 
 private:
+    bool poll();
     CURLM* handle();
 
 private:

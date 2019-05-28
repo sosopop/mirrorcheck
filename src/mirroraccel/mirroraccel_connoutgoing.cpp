@@ -14,18 +14,18 @@ mirroraccel::ConnOutgoing::ConnOutgoing(
 
     auto& request = incoming.getRequest();
 
+    curl_easy_setopt(curl, CURLOPT_PRIVATE, this);
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request.getHeaders());
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-    curl_easy_setopt(curl, CURLOPT_URL, mirror->getUrl());
+    curl_easy_setopt(curl, CURLOPT_URL, mirror->getUrl().c_str());
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
     curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 3);
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, 5000);
-    //curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, &HeaderFunction);
-    //curl_easy_setopt(curl, CURLOPT_HEADERDATA, this);
-    //curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &DownloadFunction);
-    //curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
-    //curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, this);
+    curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, &headerCallback);
+    curl_easy_setopt(curl, CURLOPT_HEADERDATA, this);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &writeCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
 }
 
 mirroraccel::ConnOutgoing::~ConnOutgoing()
@@ -34,18 +34,22 @@ mirroraccel::ConnOutgoing::~ConnOutgoing()
     curl_easy_cleanup(curl);
 }
 
-bool mirroraccel::ConnOutgoing::poll()
+void mirroraccel::ConnOutgoing::doFinish(CURLcode code)
 {
-    switch ( status)
-    {
-    case ST_QUERY:
-        doQuery();
-        break;
-    }
-    return true;
+
 }
 
-bool mirroraccel::ConnOutgoing::doQuery()
+void mirroraccel::ConnOutgoing::reset()
 {
-    return true;
+
+}
+
+size_t mirroraccel::ConnOutgoing::writeCallback(char * bufptr, size_t size, size_t nitems, void * userp)
+{
+    return size * nitems;
+}
+
+size_t mirroraccel::ConnOutgoing::headerCallback(char * bufptr, size_t size, size_t nitems, void * userp)
+{
+    return size * nitems;
 }

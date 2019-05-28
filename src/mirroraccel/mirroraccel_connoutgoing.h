@@ -18,11 +18,12 @@ public:
     ~ConnOutgoing();
 
 public:
-    //轮询任务
-    bool poll();
-    //查询任务
-    bool doQuery();
-
+    //任务完成
+    void doFinish( CURLcode code );
+    void reset();
+private:
+    static size_t writeCallback(char *bufptr, size_t size, size_t nitems, void *userp);
+    static size_t headerCallback(char *bufptr, size_t size, size_t nitems, void *userp);
 private:
     enum Status
     {

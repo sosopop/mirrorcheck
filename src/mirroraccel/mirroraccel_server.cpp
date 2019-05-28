@@ -108,13 +108,14 @@ void mirroraccel::Server::eventHandler(struct mg_connection *nc, int ev, void *p
             ConnIncoming *conn = nullptr;
             if (nc->user_data) {
                 conn = static_cast<ConnIncoming *>(nc->user_data);
+                conn->reset();
             }
             else {
                 //发起第一次请求，用于获取content-length
                 conn = new ConnIncoming(*srv, hm);
+                nc->user_data = conn;
             }
 
-            nc->user_data = conn;
             mg_send_head(nc, 200, sizeof("world") - 1, 0);
             mg_send(nc, "world", sizeof("world") - 1);
         }
