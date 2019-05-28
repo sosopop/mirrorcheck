@@ -9,8 +9,12 @@ namespace mirroraccel
 	class Request
 	{
     public:
-        Request(struct http_message* hm);
+		Request(struct http_message* hm);
         ~Request();
+	private:
+		//½ûÖ¹¿½±´
+		Request(Request& r) {};
+		Request& operator =(Request& r) { return *this; };
     public:
         std::string getUrl( const std::string& base );
         struct curl_slist* getHeaders();

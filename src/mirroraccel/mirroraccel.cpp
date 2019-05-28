@@ -5,14 +5,14 @@ static mirroraccel::ServerMgr* sm = nullptr;
 
 void mirror_accel_init()
 {
-	sm = new mirroraccel::ServerMgr();
+    sm = new mirroraccel::ServerMgr();
 }
 
 void mirror_accel_uninit()
 {
-	if (sm) {
-		delete sm;
-	}
+    if (sm) {
+        delete sm;
+    }
 }
 
 int mirror_accel_create(const char *addr, const char* json_opt)
@@ -30,5 +30,5 @@ int mirror_accel_create(const char *addr, const char* json_opt)
 
 void mirror_accel_destroy(int port)
 {
-	sm->destroy(port);
+    sm->destroy(port);
 }

@@ -7,13 +7,13 @@
 #include <thread>
 #include <memory>
 #include "mirroraccel_server.h"
+#include "mirroraccel_request.h"
 
 namespace mirroraccel
 {
 class Server;
 class ConnOutgoing;
 class MirrorItem;
-class Request;
 
 class ConnIncoming
 {
@@ -21,13 +21,13 @@ class ConnIncoming
 public:
     ConnIncoming(
         Server& server,
-        std::shared_ptr<Request> request);
+		struct http_message *hm);
 
     ~ConnIncoming();
 
 public:
     bool waitEvent();
-    std::shared_ptr<Request> getRequest();
+	Request& getRequest();
 
 private:
     CURLM* handle();
@@ -49,7 +49,7 @@ private:
     //curl multi handle
     CURLM* curlMutil = nullptr;
     //HTTP request
-    std::shared_ptr<Request> request;
+	Request request;
 };
 } // namespace mirroraccel
 #endif

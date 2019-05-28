@@ -5,9 +5,9 @@
 
 mirroraccel::ConnIncoming::ConnIncoming(
     Server& server,
-    std::shared_ptr<Request> request) :
+    struct http_message *hm) :
     server(server),
-    request(request)
+    request(hm)
 {
     curlMutil = curl_multi_init();
 
@@ -48,7 +48,7 @@ bool mirroraccel::ConnIncoming::waitEvent()
     return true;
 }
 
-std::shared_ptr<mirroraccel::Request> mirroraccel::ConnIncoming::getRequest()
+mirroraccel::Request& mirroraccel::ConnIncoming::getRequest()
 {
     return request;
 }

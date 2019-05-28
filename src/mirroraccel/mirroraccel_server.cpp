@@ -3,7 +3,6 @@
 #include "mirroraccel_connincoming.h"
 #include "mirroraccel_except.h"
 #include "mirroraccel_util.h"
-#include "mirroraccel_request.h"
 
 mirroraccel::Server::Server(
     const std::string &addr,
@@ -112,7 +111,7 @@ void mirroraccel::Server::eventHandler(struct mg_connection *nc, int ev, void *p
             }
             else {
                 //发起第一次请求，用于获取content-length
-                conn = new ConnIncoming(*srv, std::make_shared<Request>(hm));
+                conn = new ConnIncoming(*srv, hm);
             }
 
             nc->user_data = conn;

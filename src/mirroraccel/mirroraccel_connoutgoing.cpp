@@ -12,9 +12,9 @@ mirroraccel::ConnOutgoing::ConnOutgoing(
     curl = curl_easy_init();
     curl_multi_add_handle(incoming.handle(), curl);
 
-    auto request = incoming.getRequest();
+    auto& request = incoming.getRequest();
 
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request->getHeaders());
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request.getHeaders());
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
     curl_easy_setopt(curl, CURLOPT_URL, mirror->getUrl());
@@ -40,7 +40,7 @@ bool mirroraccel::ConnOutgoing::poll()
     {
     case ST_QUERY:
         doQuery();
-    	break;
+        break;
     }
     return true;
 }
