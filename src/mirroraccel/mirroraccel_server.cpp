@@ -2,6 +2,7 @@
 #include "mirroraccel_mirroritem.h"
 #include "mirroraccel_connincoming.h"
 #include "mirroraccel_except.h"
+#include "mirroraccel_request.h"
 #include "mirroraccel_util.h"
 
 mirroraccel::Server::Server(
@@ -108,11 +109,11 @@ void mirroraccel::Server::eventHandler(struct mg_connection *nc, int ev, void *p
             ConnIncoming *conn = nullptr;
             if (nc->user_data) {
                 conn = static_cast<ConnIncoming *>(nc->user_data);
-                conn->reset();
+                conn->reset(std::make_shared<Request>(hm));
             }
             else {
                 //发起第一次请求，用于获取content-length
-                conn = new ConnIncoming(*srv, hm);
+                conn = new ConnIncoming(*srv, std::make_shared<Request>(hm));
                 nc->user_data = conn;
             }
 

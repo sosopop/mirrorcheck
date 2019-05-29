@@ -5,9 +5,9 @@
 
 mirroraccel::ConnIncoming::ConnIncoming(
     Server& server,
-    struct http_message *hm) :
+	std::shared_ptr<Request> request) :
     server(server),
-    request(hm)
+    request(request)
 {
     curlMutil = curl_multi_init();
 
@@ -40,6 +40,24 @@ mirroraccel::ConnIncoming::~ConnIncoming()
 
 bool mirroraccel::ConnIncoming::poll()
 {
+	//keepalive的情况下重置连接发起新的请求
+	{
+		std::lock_guard<std::mutex> lock(resetMux);
+		if (resetSignal) {
+			//在连接reset之前先不释放，将智能指针先付给临时变量缓存一下，防止释放后request中的header释放，curl可能异常的问题。
+			auto temp = request;
+			request = resetRequest;
+			//释放新来的request指针
+			resetRequest = nullptr;
+
+			for (auto& co : conns)
+			{
+				co->reset();
+			}
+			resetSignal = false;
+		}
+	}
+
     //发起请求
     {
         int stillRunning = 0;
@@ -92,7 +110,7 @@ bool mirroraccel::ConnIncoming::poll()
 
         if (maxfd == -1) {
 #ifdef _WIN32
-            Sleep(100);
+            Sleep(10);
             rc = 0;
 #else
             /* Portable sleep for platforms other than Windows. */
@@ -123,17 +141,16 @@ bool mirroraccel::ConnIncoming::poll()
     return true;
 }
 
-mirroraccel::Request& mirroraccel::ConnIncoming::getRequest()
+std::shared_ptr<mirroraccel::Request> mirroraccel::ConnIncoming::getRequest()
 {
     return request;
 }
 
-void mirroraccel::ConnIncoming::reset()
+void mirroraccel::ConnIncoming::reset(std::shared_ptr<Request> request)
 {
-    for ( auto& co: conns)
-    {
-        co->reset();
-    }
+	std::lock_guard<std::mutex> lock(resetMux);
+	resetSignal = true;
+	resetRequest = request;
 }
 
 CURLM * mirroraccel::ConnIncoming::handle()

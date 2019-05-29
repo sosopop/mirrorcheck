@@ -20,6 +20,7 @@ private:
 public:
     std::string getUrl(const std::string &base);
     struct curl_slist *getHeaders();
+	void reset(struct http_message *hm);
 
 private:
     std::string host;
@@ -28,30 +29,9 @@ private:
     struct curl_slist *headers = nullptr;
 };
 
-inline Request::Request(struct http_message *hm) : url(hm->uri.p, hm->uri.len),
-                                                   qs(hm->query_string.p, hm->query_string.len)
+inline Request::Request(struct http_message *hm) 
 {
-    for (int i = 0; hm->header_names[i].len; i++)
-    {
-        //跳过host，后面需要替换
-        if (mg_vcasecmp(&hm->header_names[i], "Host") == 0)
-        {
-            host.assign(hm->header_values[i].p, hm->header_values[i].len);
-            continue;
-        }
-        //跳过range，后面需要替换
-        //if (mg_strncmp(hm->header_names[i], "Range") == 0)
-        //{
-        //    continue;
-        //}
-
-        headers = curl_slist_append(
-            headers,
-            (std::string(hm->header_names[i].p, hm->header_names[i].len) +
-             ":" +
-             std::string(hm->header_values[i].p, hm->header_values[i].len))
-                .c_str());
-    }
+	reset(hm);
 }
 
 inline Request::~Request()
@@ -70,6 +50,29 @@ inline std::string Request::getUrl(const std::string &base)
 inline struct curl_slist *Request::getHeaders()
 {
     return headers;
+}
+
+inline void Request::reset(http_message * hm)
+{
+	url.assign(hm->uri.p, hm->uri.len);
+	qs.assign(hm->query_string.p, hm->query_string.len);
+
+	for (int i = 0; hm->header_names[i].len; i++)
+	{
+		//跳过host，后面需要替换
+		if (mg_vcasecmp(&hm->header_names[i], "Host") == 0)
+		{
+			host.assign(hm->header_values[i].p, hm->header_values[i].len);
+			continue;
+		}
+
+		headers = curl_slist_append(
+			headers,
+			(std::string(hm->header_names[i].p, hm->header_names[i].len) +
+				":" +
+				std::string(hm->header_values[i].p, hm->header_values[i].len))
+			.c_str());
+	}
 }
 
 } // namespace mirroraccel

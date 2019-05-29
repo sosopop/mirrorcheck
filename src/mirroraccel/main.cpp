@@ -26,10 +26,10 @@ int main(int argc, char *argv[]) {
     "{"\
         "\"targets\":["\
             "{"\
-                "\"url\":\"https://dl.360safe.com/setup.exe\""\
+                "\"url\":\"http://www.dolit.cn/download/f/bt/DLBT_SDK_3.7.9_2019.zip\""\
             "},"\
             "{"\
-                " \"url\":\"https://dl.360safe.com/setup.exe\""\
+                " \"url\":\"http://www.dolit.cn/download/f/bt/DLBT_SDK_3.7.9_2019.zip\""\
             "}"\
         "]"\
     "}"

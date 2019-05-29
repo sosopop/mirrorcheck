@@ -21,9 +21,11 @@ public:
     //任务完成
     void doFinish( CURLcode code );
     void reset();
+	void init();
 private:
     static size_t writeCallback(char *bufptr, size_t size, size_t nitems, void *userp);
-    static size_t headerCallback(char *bufptr, size_t size, size_t nitems, void *userp);
+	static size_t headerCallback(char *bufptr, size_t size, size_t nitems, void *userp);
+	static int xferinfoCallback(void * p, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow);
 private:
     enum Status
     {
@@ -33,6 +35,7 @@ private:
     };
 
 private:
+	//bool resetSignal = false;
     bool stopSignal = false;
     Status status = ST_QUERY;
     ConnIncoming &incoming;

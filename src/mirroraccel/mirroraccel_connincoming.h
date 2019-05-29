@@ -21,19 +21,23 @@ class ConnIncoming
 public:
     ConnIncoming(
         Server& server,
-		struct http_message *hm);
-
+		std::shared_ptr<Request> request);
     ~ConnIncoming();
 
 public:
-	Request& getRequest();
-    void reset();
+	std::shared_ptr<Request> getRequest();
+    void reset(std::shared_ptr<Request> request);
 
 private:
     bool poll();
     CURLM* handle();
 
 private:
+	//reset pending data
+	bool resetSignal = false;
+	std::shared_ptr<Request> resetRequest = nullptr;
+	std::mutex resetMux;
+
     //connection stop signal
     bool stopSignal = false;
     //mongoose poll thread
@@ -50,7 +54,7 @@ private:
     //curl multi handle
     CURLM* curlMutil = nullptr;
     //HTTP request
-	Request request;
+	std::shared_ptr<Request> request = nullptr;
 };
 } // namespace mirroraccel
 #endif
