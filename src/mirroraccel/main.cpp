@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <curl/curl.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 
 #ifdef WIN32
 #include <crtdbg.h>
@@ -21,6 +23,13 @@ int main(int argc, char *argv[]) {
     _CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) | _CRTDBG_LEAK_CHECK_DF);
     //_CrtSetBreakAlloc(269);
 #endif
+    spdlog::set_level(spdlog::level::debug); 
+    spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%L%$] [%t] %v");
+
+    // Set the default logger to file logger¡¿
+    spdlog::set_default_logger(spdlog::stdout_color_mt("console"));
+
+
     mirror_accel_init();
     int port = mirror_accel_create("0.0.0.0:7777",
     "{"\
@@ -35,7 +44,7 @@ int main(int argc, char *argv[]) {
     "}"
     );
     if (port > 0) {
-        printf("listening on port: %d \npress ENTER key to shutdown this service\n", port);
+        spdlog::info("listening on port: {} \npress ENTER key to shutdown this service", port);
         getchar();
         mirror_accel_destroy(port);
     }

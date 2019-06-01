@@ -2,26 +2,30 @@
 #include "mirroraccel_connincoming.h"
 #include "mirroraccel_request.h"
 #include "mirroraccel_mirroritem.h"
+#include "mirroraccel_util.h"
+#include "mirroraccel_response.h"
+#include <iostream>
+#include <spdlog/spdlog.h>
 
 mirroraccel::ConnOutgoing::ConnOutgoing(
     std::shared_ptr<MirrorItem> mirror,
-    ConnIncoming& incoming):
+    ConnIncoming& incoming) :
     incoming(incoming),
-    mirror(mirror)
+    mirror(mirror),
+    regCode("^HTTP/([^\\s]+)\\s([^\\s]+)\\s(.*)\\s*$"),
+    regHeader("^\\s*([^\\s]+)\\s*:\\s*(.+?)\\s*$"),
+    regRange("^bytes\\s+(\\d+)-(\\d+)/(\\d+)$")
 {
     curl = curl_easy_init();
-    curl_multi_add_handle(incoming.handle(), curl);
-
-	init();
+    query();
 }
 
 mirroraccel::ConnOutgoing::~ConnOutgoing()
 {
-    curl_multi_remove_handle(incoming.handle(), curl);
-    curl_easy_cleanup(curl);
+    stop(false);
 }
 
-void mirroraccel::ConnOutgoing::doFinish(CURLcode code)
+void mirroraccel::ConnOutgoing::end(CURLcode code)
 {
 	switch (status)
 	{
@@ -29,24 +33,31 @@ void mirroraccel::ConnOutgoing::doFinish(CURLcode code)
 		break;
 	case ST_REQUEST:
 		break;
-	case ST_CLOSE:
-		break;
 	default:
 		break;
 	}
 }
 
-void mirroraccel::ConnOutgoing::reset()
+void mirroraccel::ConnOutgoing::stop(bool reset)
 {
-	curl_multi_remove_handle(incoming.handle(), curl);
-	curl_easy_reset(curl);
-	curl_multi_add_handle(incoming.handle(), curl);
-	init();
-	//resetSignal = true;
+    headers.clear();
+
+    curl_multi_remove_handle(incoming.handle(), curl);
+    if (reset)
+        curl_easy_reset(curl);
+    else
+        curl_easy_cleanup(curl);
 }
 
-void mirroraccel::ConnOutgoing::init()
+mirroraccel::ConnOutgoing::Status mirroraccel::ConnOutgoing::getStatus()
 {
+    return status;
+}
+
+void mirroraccel::ConnOutgoing::query()
+{
+	curl_multi_add_handle(incoming.handle(), curl);
+
 	auto request = incoming.getRequest();
 
 	curl_easy_setopt(curl, CURLOPT_PRIVATE, this);
@@ -64,32 +75,72 @@ void mirroraccel::ConnOutgoing::init()
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
 }
 
+void mirroraccel::ConnOutgoing::request()
+{
+}
+
 size_t mirroraccel::ConnOutgoing::writeCallback(char * bufptr, size_t size, size_t nitems, void * userp)
 {
 	ConnOutgoing* conn = static_cast<ConnOutgoing*>(userp);
-	//if (conn->resetSignal) {
-	//	conn->resetSignal = false;
-	//	return 0;
-	//}
     return size * nitems;
 }
 
 size_t mirroraccel::ConnOutgoing::headerCallback(char * bufptr, size_t size, size_t nitems, void * userp)
 {
 	ConnOutgoing* conn = static_cast<ConnOutgoing*>(userp);
-	//if (conn->resetSignal) {
-	//	conn->resetSignal = false;
-	//	return 0;
-	//}
-    return size * nitems;
-}
+    if (ST_QUERY == conn->status) {
+        //http头缓存下来准备输出到外部
+        if (conn->response == nullptr) {
+            conn->response = std::make_shared<Response>();
+        }
+        std::string header(bufptr, size * nitems);
+        conn->response->headers += header;
+        spdlog::debug("{}", header);
 
-int mirroraccel::ConnOutgoing::xferinfoCallback(void * p, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow)
-{
-	ConnOutgoing* conn = static_cast<ConnOutgoing*>(p);
-	//if (conn->resetSignal) {
-	//	conn->resetSignal = false;
-	//	return -1;
-	//}
-	return 0;
+        //匹配返回码
+        if (conn->headers.size() == 0) {
+            std::smatch matched;
+            //header = "HTTP/1.1 200 OK";
+            if (std::regex_match(header, matched, conn->regCode, std::regex_constants::match_default) && matched.size() == 4) {
+                conn->response->ver = matched[1].str();
+                conn->response->status = matched[2].str();
+                conn->response->msg = matched[3].str();
+
+                if (conn->response->status != "200" && conn->response->status != "206") {
+                    return 0;
+                }
+            }
+            else {
+                return 0;
+            }
+            conn->headers.push_back(header);
+        }
+        else {
+            //header完成
+            if (header == "\r\n") {
+                conn->incoming.onQueryFinished(conn, conn->response);
+            }
+            else {
+                std::smatch matched;
+                if (std::regex_match(header, matched, conn->regHeader, 
+                    std::regex_constants::match_default) && matched.size() == 3) {
+                    std::string key = matched[1].str();
+                    std::string value = matched[2].str();
+                    if (util::icompare(key, "content-range")) {
+                        if (std::regex_match(header, matched, conn->regRange, 
+                            std::regex_constants::match_default) && matched.size() == 4) {
+                            conn->response->rangeStart = std::atoll(matched[1].str().c_str());
+                            conn->response->rangeEnd = std::atoll(matched[2].str().c_str());
+                            conn->response->rangeTotal = std::atoll(matched[3].str().c_str());
+                        }
+                    }
+                    else if (util::icompare(key, "content-length")) {
+                        conn->response->contentLength = std::atoll(value.c_str());
+                    }
+                }
+                conn->headers.push_back(header);
+            }
+        }
+    }
+    return size * nitems;
 }

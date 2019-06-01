@@ -1,5 +1,6 @@
 #include "mirroraccel_servermgr.h"
 #include <iostream>
+#include <spdlog/spdlog.h>
 
 static mirroraccel::ServerMgr* sm = nullptr;
 
@@ -23,7 +24,7 @@ int mirror_accel_create(const char *addr, const char* json_opt)
     }
     catch (std::exception& e)
     {
-        std::cout << e.what() << std::endl;
+        spdlog::error("{}", e.what());
     }
     return 0;
 }

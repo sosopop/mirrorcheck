@@ -14,8 +14,8 @@ public:
 
 private:
     //禁止拷贝
-    Request(Request &r){};
-    Request &operator=(Request &r) { return *this; };
+    Request(Request &r) = delete;
+    Request &operator=(Request &r) = delete;
 
 public:
     std::string getUrl(const std::string &base);

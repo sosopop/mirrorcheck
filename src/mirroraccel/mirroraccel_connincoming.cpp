@@ -1,7 +1,10 @@
 #include "mirroraccel_connincoming.h"
-#include <thread>
 #include "mirroraccel_connoutgoing.h"
 #include "mirroraccel_mirroritem.h"
+#include "mirroraccel_request.h"
+#include <thread>
+#include <iostream>
+#include <spdlog/spdlog.h>
 
 mirroraccel::ConnIncoming::ConnIncoming(
     Server& server,
@@ -16,7 +19,7 @@ mirroraccel::ConnIncoming::ConnIncoming(
     for (auto& item : mirrors)
     {
         std::shared_ptr<ConnOutgoing> outgoing = std::make_shared<ConnOutgoing>(item, *this);
-        conns.push_back(outgoing);
+        conns.insert(outgoing);
     }
 
     //启动监听线程
@@ -49,10 +52,12 @@ bool mirroraccel::ConnIncoming::poll()
 			request = resetRequest;
 			//释放新来的request指针
 			resetRequest = nullptr;
+            startTrans = false;
 
 			for (auto& co : conns)
 			{
-				co->reset();
+                co->stop();
+                co->query();
 			}
 			resetSignal = false;
 		}
@@ -62,7 +67,8 @@ bool mirroraccel::ConnIncoming::poll()
     {
         int stillRunning = 0;
         curl_multi_perform(curlMutil, &stillRunning);
-        printf("current running handles %d \n", stillRunning);
+        if (stillRunning)
+            spdlog::debug("current running handles {}", stillRunning);
     }
 
     //检查事件
@@ -130,13 +136,20 @@ bool mirroraccel::ConnIncoming::poll()
         int msgs_left = 0;
         /* See how the transfers went */
         while ((msg = curl_multi_info_read(curlMutil, &msgs_left))) {
-            if (msg->msg != CURLMSG_DONE) 
-                continue;
-
             ConnOutgoing* conn = nullptr;
             curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &conn);
-            conn->doFinish(msg->data.result);
+
+            if (msg->msg != CURLMSG_DONE) {
+                //conn->end(msg->data.result);
+            }
+            else {
+                conn->end(msg->data.result);
+            }
         }
+    }
+
+    {
+
     }
     return true;
 }
@@ -151,6 +164,15 @@ void mirroraccel::ConnIncoming::reset(std::shared_ptr<Request> request)
 	std::lock_guard<std::mutex> lock(resetMux);
 	resetSignal = true;
 	resetRequest = request;
+}
+
+void mirroraccel::ConnIncoming::onQueryFinished(ConnOutgoing* conn, std::shared_ptr<Response> resp)
+{
+    //完成文件长度的探测,准备传输数据
+    if (!startTrans) {
+        //匹配range,匹配contentlength
+        startTrans = true;
+    }
 }
 
 CURLM * mirroraccel::ConnIncoming::handle()
