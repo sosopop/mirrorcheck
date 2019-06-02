@@ -26,16 +26,16 @@ public:
         ST_QUERY_END,
         ST_QUERY_ERROR,
         ST_REQUEST,
-        ST_REQUEST_END,
-        ST_REQUEST_ERROR
+        ST_REQUEST_ERROR,
+        ST_STOPED
     };
 public:
-    //任务完成
-    void end( CURLcode code );
     void query();
-    void request();
+    void request(std::pair<std::int64_t,std::int64_t> blockRange);
     void stop(bool reset = true);
+    void end(CURLcode code);
     Status getStatus();
+    std::shared_ptr<Response> getResponse();
 private:
     static size_t writeCallback(char *bufptr, size_t size, size_t nitems, void *userp);
 	static size_t headerCallback(char *bufptr, size_t size, size_t nitems, void *userp);

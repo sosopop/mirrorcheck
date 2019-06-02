@@ -18,7 +18,7 @@ private:
     Request &operator=(Request &r) = delete;
 
 public:
-    std::string getUrl(const std::string &base);
+    std::string getUrl();
     struct curl_slist *getHeaders();
 	void reset(struct http_message *hm);
 
@@ -42,9 +42,11 @@ inline Request::~Request()
     }
 }
 
-inline std::string Request::getUrl(const std::string &base)
+inline std::string Request::getUrl()
 {
-    return base + url + "?" + qs;
+    if (qs.empty())
+        return url;
+    return url + "?" + qs;
 }
 
 inline struct curl_slist *Request::getHeaders()

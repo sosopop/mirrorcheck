@@ -26,24 +26,31 @@ public:
         Server& server,
 		std::shared_ptr<Request> request);
     ~ConnIncoming();
-
+public:
+    enum Status {
+        ST_QUERY = 0,
+        ST_QUERY_END,
+        ST_TRANS,
+    };
 public:
 	std::shared_ptr<Request> getRequest();
     void reset(std::shared_ptr<Request> request);
 
-public:
-    void onQueryFinished(ConnOutgoing* conn, std::shared_ptr<Response> resp);
-
 private:
+    void stop();
+    void start();
+    void dispatch();
+    void eventWait();
+    void perform();
+
     bool poll();
     CURLM* handle();
 
+    void removeQueryConn();
+    bool onQueryEnd(ConnOutgoing* conn, std::shared_ptr<Response> response);
 private:
 	//reset pending data
-    bool startTrans = false;
-	bool resetSignal = false;
-	std::shared_ptr<Request> resetRequest = nullptr;
-	std::mutex resetMux;
+    Status status = ST_QUERY;
 
     //connection stop signal
     bool stopSignal = false;
@@ -66,6 +73,8 @@ private:
     std::regex regHeader;
     //返回responseHeader;
     std::string responseHeader;
+    //正在运行的easycurl
+    int stillRunning = 0;
 };
 } // namespace mirroraccel
 #endif
