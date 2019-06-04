@@ -146,7 +146,7 @@ size_t mirroraccel::ConnOutgoing::headerCallback(char * bufptr, size_t size, siz
                         std::string key = matched[1].str();
                         std::string value = matched[2].str();
                         if (util::icompare(key, "content-range")) {
-                            if (std::regex_match(header, matched, conn->regRange,
+                            if (std::regex_match(value, matched, conn->regRange,
                                 std::regex_constants::match_default) && matched.size() == 4) {
                                 conn->response->rangeStart = std::atoll(matched[1].str().c_str());
                                 conn->response->rangeEnd = std::atoll(matched[2].str().c_str());
