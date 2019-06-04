@@ -56,13 +56,15 @@ inline struct curl_slist *Request::getHeaders()
 
 inline void Request::reset(http_message * hm)
 {
+    int ret = 0;
 	url.assign(hm->uri.p, hm->uri.len);
 	qs.assign(hm->query_string.p, hm->query_string.len);
 
 	for (int i = 0; hm->header_names[i].len; i++)
 	{
 		//跳过host，后面需要替换
-		if (mg_vcasecmp(&hm->header_names[i], "Host") == 0)
+        ret = mg_vcasecmp(&hm->header_names[i], "Host");
+		if (ret == 0)
 		{
 			host.assign(hm->header_values[i].p, hm->header_values[i].len);
 			continue;

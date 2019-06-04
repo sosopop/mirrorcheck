@@ -2,6 +2,8 @@
 #include "mirroraccel_connoutgoing.h"
 #include "mirroraccel_mirroritem.h"
 #include "mirroraccel_request.h"
+#include "mirroraccel_response.h"
+#include "mirroraccel_task.h"
 #include <thread>
 #include <iostream>
 #include <spdlog/spdlog.h>
@@ -232,6 +234,21 @@ void mirroraccel::ConnIncoming::removeQueryConn()
 bool mirroraccel::ConnIncoming::onQueryEnd(ConnOutgoing* conn, std::shared_ptr<Response> response)
 {
     if (status == ST_QUERY) {
+        this->response = response;
+        //非range请求
+        if (response->rangeTotal == 0) {
+            taskSet.insert(std::make_shared<Task>(conn, 0, response->contentLength));
+        }
+        else {
+            std::int64_t rangeStart = response->rangeStart;
+            std::int64_t rangeLen = response->contentLength;
+            if(response->rangeEnd != response->rangeStart && rangeLen == 0)
+                rangeLen = response->rangeEnd - response->rangeStart + 1;
+            taskSet.insert(std::make_shared<Task>(
+                conn, 
+                response->rangeStart,
+                rangeLen));
+        }
         status = ST_QUERY_END;
         return true;
     }

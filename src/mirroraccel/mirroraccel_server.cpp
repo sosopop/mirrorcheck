@@ -117,8 +117,8 @@ void mirroraccel::Server::eventHandler(struct mg_connection *nc, int ev, void *p
                 nc->user_data = conn;
             }
 
-            mg_send_head(nc, 200, sizeof("world") - 1, 0);
-            mg_send(nc, "world", sizeof("world") - 1);
+            //mg_send_head(nc, 200, sizeof("world") - 1, 0);
+            //mg_send(nc, "world", sizeof("world") - 1);
         }
         else
         {

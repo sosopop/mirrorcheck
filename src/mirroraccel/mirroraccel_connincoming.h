@@ -17,6 +17,7 @@ class ConnOutgoing;
 class MirrorItem;
 struct Response;
 class Request;
+struct Task;
 
 class ConnIncoming
 {
@@ -68,13 +69,17 @@ private:
     //curl multi handle
     CURLM* curlMutil = nullptr;
     //HTTP request
-	std::shared_ptr<Request> request = nullptr;
+    std::shared_ptr<Request> request = nullptr;
+    //HTTP response
+    std::shared_ptr<Response> response = nullptr;
     //匹配http头正则
     std::regex regHeader;
     //返回responseHeader;
     std::string responseHeader;
     //正在运行的easycurl
     int stillRunning = 0;
+    //任务列表
+    std::set<std::shared_ptr<Task>> taskSet;
 };
 } // namespace mirroraccel
 #endif
