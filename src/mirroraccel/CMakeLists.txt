@@ -10,7 +10,7 @@ add_definitions(-DCURL_STATICLIB -DMG_ENABLE_SSL -DMG_ENABLE_CALLBACK_USERDATA -
 
 if(WIN32)
     add_definitions(-DWIN32_LEAN_AND_MEAN)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /utf-8")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /source-charset:utf-8")
 endif()
 
 if(UNIX)

@@ -5,12 +5,14 @@
 #include <list>
 #include <curl/curl.h>
 #include <regex>
+#include "mongoose.h"
 
 namespace mirroraccel
 {
 class MirrorItem;
 class ConnIncoming;
 struct Response;
+struct Task;
 
 class ConnOutgoing
 {
@@ -27,11 +29,12 @@ public:
         ST_QUERY_ERROR,
         ST_REQUEST,
         ST_REQUEST_ERROR,
+        ST_TRANS,
         ST_STOPED
     };
 public:
     void query();
-    void request(std::pair<std::int64_t,std::int64_t> blockRange);
+    void request();
     void stop(bool reset = true);
     void end(CURLcode code);
     Status getStatus();
@@ -51,6 +54,9 @@ private:
     std::regex regCode;
     std::regex regHeader;
     std::regex regRange;
+    //被分配的任务
+    std::shared_ptr<Task> task = nullptr;
+    mbuf buffer;
 };
 } // namespace mirroraccel
 #endif

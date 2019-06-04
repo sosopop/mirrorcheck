@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
     spdlog::set_level(spdlog::level::debug); 
     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%L%$] [%t] %v");
 
-    // Set the default logger to file logger¡¿
+    // Set the default logger to file logger
     spdlog::set_default_logger(spdlog::stdout_color_mt("console"));
 
 
@@ -35,10 +35,10 @@ int main(int argc, char *argv[]) {
     "{"\
         "\"targets\":["\
             "{"\
-                "\"url\":\"http://www.dolit.cn/download/f/bt/DLBT_SDK_3.7.9_2019.zip\""\
+                "\"url\":\"http://www.dolit.cn/download/f/bt/DLBT_SDK_3.7.9_2019.zip?id=1\""\
             "},"\
             "{"\
-                " \"url\":\"http://www.dolit.cn/download/f/bt/DLBT_SDK_3.7.9_2019.zip\""\
+                " \"url\":\"http://www.dolit.cn/download/f/bt/DLBT_SDK_3.7.9_2019.zip?id=2\""\
             "}"\
         "]"\
     "}"

@@ -88,8 +88,10 @@ void mirroraccel::ConnOutgoing::query()
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
 }
 
-void mirroraccel::ConnOutgoing::request(std::pair<std::int64_t, std::int64_t> blockRange)
+void mirroraccel::ConnOutgoing::request()
 {
+    status = ST_TRANS;
+    spdlog::debug("准备发起 request：{}", mirror->getUrl());
 }
 
 size_t mirroraccel::ConnOutgoing::writeCallback(char * bufptr, size_t size, size_t nitems, void * userp)
@@ -133,9 +135,15 @@ size_t mirroraccel::ConnOutgoing::headerCallback(char * bufptr, size_t size, siz
             else {
                 //header完成
                 if (header == "\r\n") {
-                    conn->status = ST_QUERY_END;
-                    if ( !conn->incoming.onQueryEnd(conn, conn->response))
+                    if ( conn->incoming.onQueryEnd(conn, conn->response))
                     {
+                        //第一个获取到任务的连接直接进入传输状态
+                        spdlog::debug("第一个获取到任务的连接直接进入传输状态：{}", conn->mirror->getUrl());
+                        conn->status = ST_TRANS;
+                        conn->task = conn->incoming.fetchTask();
+                    }
+                    else {
+                        conn->status = ST_QUERY_END;
                         return 0;
                     }
                 }

@@ -8,6 +8,8 @@
 #include <iostream>
 #include <spdlog/spdlog.h>
 
+#define TASK_DATA_SIZE 1024 * 1024
+
 mirroraccel::ConnIncoming::ConnIncoming(
     Server& server,
 	std::shared_ptr<Request> request) :
@@ -75,23 +77,21 @@ void mirroraccel::ConnIncoming::dispatch()
     switch (status)
     {
     case ST_QUERY:
+        //如果是查询状态，并且当前正在运行的连接为0，则返回错误信息
         if (stillRunning == 0)
         {
-            //返回失败信息
+            //返回失败信息 404
         }
-        break;
-    case ST_QUERY_END:
-        //开始下载任务
-        for (auto co: conns)
-        {
-            if (co->getStatus() != ConnOutgoing::ST_QUERY_ERROR) {
-                //分配下载任务
-                //co->request();
-            }
-        }
-        status = ST_TRANS;
         break;
     case ST_TRANS:
+        //开始下载请求
+        for (auto co : conns)
+        {
+            //排除掉已经开始下载的连接
+            if (co->getStatus() != ConnOutgoing::ST_TRANS) {
+                co->request();
+            }
+        }
         break;
     default:
         break;
@@ -201,56 +201,44 @@ CURLM * mirroraccel::ConnIncoming::handle()
     return curlMutil;
 }
 
-void mirroraccel::ConnIncoming::removeQueryConn()
-{
-    CURLMsg *msg = nullptr;
-    int msgs_left = 0;
-    //http处理
-    while ((msg = curl_multi_info_read(curlMutil, &msgs_left))) {
-        ConnOutgoing* conn = nullptr;
-        curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &conn);
-        //检测到查询结束，则关闭掉其他正在查询的连接
-        if (status == ST_QUERY) {
-            if (conn->getStatus() == ConnOutgoing::ST_QUERY) {
-                //分配下载任务
-                //conn->request();
-            }
-        }
-    }
-
-    switch (status)
-    {
-    case ST_QUERY:
-        break;
-    case ST_QUERY_END:
-        break;
-    case ST_TRANS:
-        break;
-    default:
-        break;
-    }
-}
-
 bool mirroraccel::ConnIncoming::onQueryEnd(ConnOutgoing* conn, std::shared_ptr<Response> response)
 {
     if (status == ST_QUERY) {
         this->response = response;
         //非range请求
         if (response->rangeTotal == 0) {
-            taskSet.insert(std::make_shared<Task>(conn, 0, response->contentLength));
+            rangeStart = 0;
+            rangeSize = response->contentLength;
         }
         else {
-            std::int64_t rangeStart = response->rangeStart;
-            std::int64_t rangeLen = response->contentLength;
-            if(response->rangeEnd != response->rangeStart && rangeLen == 0)
-                rangeLen = response->rangeEnd - response->rangeStart + 1;
-            taskSet.insert(std::make_shared<Task>(
-                conn, 
-                response->rangeStart,
-                rangeLen));
+            rangeStart = response->rangeStart;
+            rangeSize = response->contentLength;
+            if (response->rangeEnd != response->rangeStart && rangeSize == 0) {
+                rangeSize = response->rangeEnd - response->rangeStart + 1;
+            }
         }
-        status = ST_QUERY_END;
+        status = ST_TRANS;
         return true;
     }
     return false;
+}
+
+std::shared_ptr<mirroraccel::Task> mirroraccel::ConnIncoming::fetchTask()
+{
+    //没有任务返回空
+    if (rangeSize == rangeCurSize) {
+        return nullptr;
+    }
+
+    auto readSize = rangeSize - rangeCurSize;
+    if (readSize > TASK_DATA_SIZE) {
+        readSize = TASK_DATA_SIZE;
+    }
+    rangeCurSize += readSize;
+
+    auto task = std::make_shared<Task>(
+        rangeStart + rangeCurSize, TASK_DATA_SIZE
+    );
+
+    return task;
 }

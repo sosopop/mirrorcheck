@@ -47,8 +47,8 @@ private:
     bool poll();
     CURLM* handle();
 
-    void removeQueryConn();
     bool onQueryEnd(ConnOutgoing* conn, std::shared_ptr<Response> response);
+    std::shared_ptr<Task> fetchTask();
 private:
 	//reset pending data
     Status status = ST_QUERY;
@@ -78,8 +78,12 @@ private:
     std::string responseHeader;
     //正在运行的easycurl
     int stillRunning = 0;
-    //任务列表
-    std::set<std::shared_ptr<Task>> taskSet;
+    //任务范围
+    std::int64_t rangeStart = 0;
+    std::int64_t rangeSize = 0;
+    std::int64_t rangeCurSize = 0;
+    //工作任务列表
+    std::set<std::shared_ptr<Task>> taskWorkingSet;
 };
 } // namespace mirroraccel
 #endif
