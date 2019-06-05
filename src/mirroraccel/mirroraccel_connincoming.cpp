@@ -88,8 +88,8 @@ void mirroraccel::ConnIncoming::dispatch()
         for (auto co : conns)
         {
             //排除掉已经开始下载的连接
-            if (co->getStatus() != ConnOutgoing::ST_TRANS) {
-                co->request();
+            if (co->getStatus() == ConnOutgoing::ST_QUERY || co->getStatus() == ConnOutgoing::ST_QUERY_END) {
+                co->stop();
             }
         }
         break;
@@ -160,10 +160,12 @@ void mirroraccel::ConnIncoming::eventWait()
 
 void mirroraccel::ConnIncoming::perform()
 {
-    stillRunning = 0;
-    curl_multi_perform(curlMutil, &stillRunning);
-    if (stillRunning)
+    int  newRuning = 0;
+    curl_multi_perform(curlMutil, &newRuning);
+    if (stillRunning != newRuning) {
+        stillRunning = newRuning;
         spdlog::debug("current running handles {}", stillRunning);
+    }
 }
 
 bool mirroraccel::ConnIncoming::poll()
@@ -230,6 +232,13 @@ std::shared_ptr<mirroraccel::Task> mirroraccel::ConnIncoming::fetchTask()
         return nullptr;
     }
 
+    //第一期直接第一个任务返回所有数据
+    auto task = std::make_shared<Task>(
+        rangeStart, rangeSize
+        );
+    taskWorkingSet.insert(task);
+    /*
+    后期开发任务分段
     auto readSize = rangeSize - rangeCurSize;
     if (readSize > TASK_DATA_SIZE) {
         readSize = TASK_DATA_SIZE;
@@ -239,6 +248,6 @@ std::shared_ptr<mirroraccel::Task> mirroraccel::ConnIncoming::fetchTask()
     auto task = std::make_shared<Task>(
         rangeStart + rangeCurSize, TASK_DATA_SIZE
     );
-
+    */
     return task;
 }

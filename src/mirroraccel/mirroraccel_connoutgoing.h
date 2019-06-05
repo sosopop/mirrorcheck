@@ -27,8 +27,6 @@ public:
         ST_QUERY = 0,
         ST_QUERY_END,
         ST_QUERY_ERROR,
-        ST_REQUEST,
-        ST_REQUEST_ERROR,
         ST_TRANS,
         ST_STOPED
     };

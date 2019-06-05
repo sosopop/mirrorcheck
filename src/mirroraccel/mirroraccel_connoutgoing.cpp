@@ -4,6 +4,7 @@
 #include "mirroraccel_mirroritem.h"
 #include "mirroraccel_util.h"
 #include "mirroraccel_response.h"
+#include "mirroraccel_task.h"
 #include <iostream>
 #include <spdlog/spdlog.h>
 
@@ -16,18 +17,18 @@ mirroraccel::ConnOutgoing::ConnOutgoing(
     regHeader("^\\s*([^\\s]+)\\s*:\\s*(.+?)\\s*$"),
     regRange("^bytes\\s+(\\d+)-(\\d+)/(\\d+)$")
 {
-    spdlog::debug("new connection outgoing, {}", mirror->getUrl());
+    spdlog::debug("对外建立镜像连接, {}", mirror->getUrl());
     query();
 }
 
 mirroraccel::ConnOutgoing::~ConnOutgoing()
 {
     stop(false);
-    spdlog::debug("connection outgoing disconnected, {}", mirror->getUrl());
 }
 
 void mirroraccel::ConnOutgoing::stop(bool reset)
 {
+    spdlog::debug("停止对外镜像连接, {}", mirror->getUrl());
     headers.clear();
     curl_multi_remove_handle(incoming.handle(), curl);
     if (reset) {
@@ -90,6 +91,11 @@ void mirroraccel::ConnOutgoing::query()
 
 void mirroraccel::ConnOutgoing::request()
 {
+    if (status == ST_TRANS)
+    {
+        return;
+    }
+    //第二期支持多连接传输
     status = ST_TRANS;
     spdlog::debug("准备发起 request：{}", mirror->getUrl());
 }
@@ -97,6 +103,10 @@ void mirroraccel::ConnOutgoing::request()
 size_t mirroraccel::ConnOutgoing::writeCallback(char * bufptr, size_t size, size_t nitems, void * userp)
 {
 	ConnOutgoing* conn = static_cast<ConnOutgoing*>(userp);
+    if (conn->status != ST_TRANS && conn->task == nullptr) {
+        return 0;
+    }
+    mbuf_append(&conn->task->buffer, bufptr, size*nitems);
     return size * nitems;
 }
 
@@ -139,8 +149,12 @@ size_t mirroraccel::ConnOutgoing::headerCallback(char * bufptr, size_t size, siz
                     {
                         //第一个获取到任务的连接直接进入传输状态
                         spdlog::debug("第一个获取到任务的连接直接进入传输状态：{}", conn->mirror->getUrl());
-                        conn->status = ST_TRANS;
                         conn->task = conn->incoming.fetchTask();
+                        if (conn->task == nullptr) {
+                            conn->status = ST_QUERY_ERROR;
+                            return 0;
+                        }
+                        conn->status = ST_TRANS;
                     }
                     else {
                         conn->status = ST_QUERY_END;

@@ -39,6 +39,15 @@ int main(int argc, char *argv[]) {
             "},"\
             "{"\
                 " \"url\":\"http://www.dolit.cn/download/f/bt/DLBT_SDK_3.7.9_2019.zip?id=2\""\
+            "},"\
+            "{"\
+                " \"url\":\"http://www.dolit.cn/download/f/bt/DLBT_SDK_3.7.9_2019.zip?id=3\""\
+            "},"\
+            "{"\
+                " \"url\":\"http://www.dolit.cn/download/f/bt/DLBT_SDK_3.7.9_2019.zip?id=4\""\
+            "},"\
+            "{"\
+                " \"url\":\"http://www.dolit.cn/download/f/bt/DLBT_SDK_3.7.9_2019.zip?id=5\""\
             "}"\
         "]"\
     "}"

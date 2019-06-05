@@ -2,6 +2,7 @@
 #define MIRRORACCEL_TASK_H_
 
 #include<chrono>
+#include <mutex>
 #include "mongoose.h"
 
 namespace mirroraccel
