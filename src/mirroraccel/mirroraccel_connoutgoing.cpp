@@ -86,7 +86,10 @@ void mirroraccel::ConnOutgoing::query()
 	curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, &headerCallback);
 	curl_easy_setopt(curl, CURLOPT_HEADERDATA, this);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &writeCallback);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
+    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
+    curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, xferinfoCallback);
+    curl_easy_setopt(curl, CURLOPT_XFERINFODATA, this);
 }
 
 void mirroraccel::ConnOutgoing::request()
@@ -103,10 +106,10 @@ void mirroraccel::ConnOutgoing::request()
 size_t mirroraccel::ConnOutgoing::writeCallback(char * bufptr, size_t size, size_t nitems, void * userp)
 {
 	ConnOutgoing* conn = static_cast<ConnOutgoing*>(userp);
-    if (conn->status != ST_TRANS && conn->task == nullptr) {
-        return 0;
+    if (conn->task->write(bufptr, size * nitems) > TASK_DATA_SIZE) {
+        conn->status = ST_TRANS_WAIT_BUF_AVALID;
+        curl_easy_pause(conn->curl, CURLPAUSE_RECV);
     }
-    mbuf_append(&conn->task->buffer, bufptr, size*nitems);
     return size * nitems;
 }
 
@@ -155,6 +158,7 @@ size_t mirroraccel::ConnOutgoing::headerCallback(char * bufptr, size_t size, siz
                             return 0;
                         }
                         conn->status = ST_TRANS;
+                        conn->task->write((char*)conn->response->headers.c_str(), conn->response->headers.length());
                     }
                     else {
                         conn->status = ST_QUERY_END;
@@ -190,4 +194,20 @@ size_t mirroraccel::ConnOutgoing::headerCallback(char * bufptr, size_t size, siz
         }
     }
     return size * nitems;
+}
+
+int mirroraccel::ConnOutgoing::xferinfoCallback(void * p, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow)
+{
+    ConnOutgoing* conn = static_cast<ConnOutgoing*>(p);
+    if (conn->status == ST_TRANS_WAIT_BUF_AVALID) {
+        if (conn->task->size() <= TASK_DATA_SIZE) {
+            conn->status = ST_TRANS;
+            curl_easy_pause(conn->curl, CURLPAUSE_RECV_CONT);
+        }
+        spdlog::trace("xferinfoCallback ST_TRANS_WAIT_BUF_AVALID");
+    }
+    else {
+        spdlog::trace("xferinfoCallback");
+    }
+    return 0;
 }

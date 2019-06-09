@@ -8,8 +8,6 @@
 #include <iostream>
 #include <spdlog/spdlog.h>
 
-#define TASK_DATA_SIZE 1024 * 1024
-
 mirroraccel::ConnIncoming::ConnIncoming(
     Server& server,
 	std::shared_ptr<Request> request) :
@@ -198,6 +196,19 @@ void mirroraccel::ConnIncoming::reset(std::shared_ptr<Request> request)
     start();
 }
 
+void mirroraccel::ConnIncoming::readData(mbuf & buf)
+{
+    std::lock_guard<std::mutex> lock(taskDataMux);
+    if (taskWorkingSet.size() == 0) {
+        return;
+    }
+    std::shared_ptr<Task> task = *taskWorkingSet.begin();
+    if (task->size() == 0) {
+        return;
+    }
+    task->read(buf);
+}
+
 CURLM * mirroraccel::ConnIncoming::handle()
 {
     return curlMutil;
@@ -236,7 +247,10 @@ std::shared_ptr<mirroraccel::Task> mirroraccel::ConnIncoming::fetchTask()
     auto task = std::make_shared<Task>(
         rangeStart, rangeSize
         );
-    taskWorkingSet.insert(task);
+    {
+        std::lock_guard<std::mutex> lock(taskDataMux);
+        taskWorkingSet.insert(task);
+    }
     /*
     后期开发任务分段
     auto readSize = rangeSize - rangeCurSize;

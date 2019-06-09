@@ -36,7 +36,7 @@ public:
 public:
 	std::shared_ptr<Request> getRequest();
     void reset(std::shared_ptr<Request> request);
-
+    void readData(mbuf& buf);
 private:
     void stop();
     void start();
@@ -84,6 +84,7 @@ private:
     std::int64_t rangeCurSize = 0;
     //工作任务列表
     std::set<std::shared_ptr<Task>> taskWorkingSet;
+    std::mutex taskDataMux;
 };
 } // namespace mirroraccel
 #endif

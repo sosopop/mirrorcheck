@@ -28,6 +28,7 @@ public:
         ST_QUERY_END,
         ST_QUERY_ERROR,
         ST_TRANS,
+        ST_TRANS_WAIT_BUF_AVALID,
         ST_STOPED
     };
 public:
@@ -40,6 +41,7 @@ public:
 private:
     static size_t writeCallback(char *bufptr, size_t size, size_t nitems, void *userp);
 	static size_t headerCallback(char *bufptr, size_t size, size_t nitems, void *userp);
+    static int xferinfoCallback(void * p, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow);
 private:
 	//bool resetSignal = false;
     bool stopSignal = false;

@@ -5,6 +5,8 @@
 #include "mirroraccel_request.h"
 #include "mirroraccel_util.h"
 
+#define MAX_CONN_CACHE_SIZE 1024 * 1024
+
 mirroraccel::Server::Server(
     const std::string &addr,
     const std::string &jsonOption)
@@ -79,33 +81,6 @@ void mirroraccel::Server::eventHandler(struct mg_connection *nc, int ev, void *p
         struct http_message *hm = (struct http_message *)p;
         if (util::startWith(&hm->uri, "/stream/") == 0)
         {
-            /*
-            //来自 mongoose mg_http_serve_file 函数
-            int64_t r1 = 0, r2 = 0, cl = 0;
-            int n, status_code = 200;
-            char range[70] = {0};
-            struct mg_str *range_hdr = mg_get_http_header(hm, "Range");
-            if (range_hdr != NULL &&
-                (n = mg_http_parse_range_header(range_hdr, &r1, &r2)) > 0 && r1 >= 0 &&
-                r2 >= 0) {
-                // If range is specified like "400-", set second limit to content len 
-                if (n == 1) {
-                    r2 = cl - 1;
-                }
-                if (r1 > r2 || r2 >= cl) {
-                    status_code = 416;
-                    cl = 0;*/
-                    //snprintf(range, sizeof(range), "Content-Range: bytes */%" INT64_FMT "\r\n",  (int64_t)st.st_size);
-                /*}
-                else {
-                    status_code = 206;
-                    cl = r2 - r1 + 1;
-                    snprintf(range, sizeof(range), "Content-Range: bytes %" INT64_FMT
-                        "-%" INT64_FMT "/%" INT64_FMT "\r\n",
-                        r1, r1 + cl - 1, (int64_t)st.st_size);
-                }
-            }
-            */
             ConnIncoming *conn = nullptr;
             if (nc->user_data) {
                 conn = static_cast<ConnIncoming *>(nc->user_data);
@@ -115,6 +90,7 @@ void mirroraccel::Server::eventHandler(struct mg_connection *nc, int ev, void *p
                 //发起第一次请求，用于获取content-length
                 conn = new ConnIncoming(*srv, std::make_shared<Request>(hm));
                 nc->user_data = conn;
+                mg_set_timer(nc, mg_time() + 0.05);
             }
 
             //mg_send_head(nc, 200, sizeof("world") - 1, 0);
@@ -122,8 +98,7 @@ void mirroraccel::Server::eventHandler(struct mg_connection *nc, int ev, void *p
         }
         else
         {
-            mg_send_head(nc, 200, sizeof("!!!") - 1, 0);
-            mg_send(nc, "!!!", sizeof("!!!") - 1);
+            mg_http_send_error(nc, 404, "stream not found");
         }
     }
     else if (ev == MG_EV_CLOSE)
@@ -132,6 +107,31 @@ void mirroraccel::Server::eventHandler(struct mg_connection *nc, int ev, void *p
         {
             ConnIncoming *conn = static_cast<ConnIncoming *>(nc->user_data);
             delete conn;
+        }
+    }
+    else if (ev == MG_EV_TIMER)
+    {
+        ConnIncoming *conn = nullptr;
+        if (nc->user_data == nullptr)
+            return;
+        conn = static_cast<ConnIncoming *>(nc->user_data);
+        mg_set_timer(nc, mg_time() + 0.05);
+        struct mbuf *io = &nc->send_mbuf;
+        if (io->len > MAX_CONN_CACHE_SIZE) {
+            //等待消费完毕，再去读取
+            return;
+        }
+        while (true)
+        {
+            mbuf data = { 0,0,0 };
+            conn->readData(data);
+            if (data.len) {
+                mg_send(nc, data.buf, data.len);
+                mbuf_free(&data);
+            }
+            else {
+                break;
+            }
         }
     }
 }

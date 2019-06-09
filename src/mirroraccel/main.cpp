@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
     _CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) | _CRTDBG_LEAK_CHECK_DF);
     //_CrtSetBreakAlloc(269);
 #endif
-    spdlog::set_level(spdlog::level::debug); 
+    spdlog::set_level(spdlog::level::trace); 
     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%L%$] [%t] %v");
 
     // Set the default logger to file logger
