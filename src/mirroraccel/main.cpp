@@ -35,19 +35,19 @@ int main(int argc, char *argv[]) {
     "{"\
         "\"targets\":["\
             "{"\
-                "\"url\":\"http://www.dolit.cn/download/f/bt/DLBT_SDK_3.7.9_2019.zip?id=1\""\
+                "\"url\":\"http://42.51.203.25/xszr.mp4?id=1\""\
             "},"\
             "{"\
-                " \"url\":\"http://www.dolit.cn/download/f/bt/DLBT_SDK_3.7.9_2019.zip?id=2\""\
+                " \"url\":\"http://42.51.203.25/xszr.mp4?id=2\""\
             "},"\
             "{"\
-                " \"url\":\"http://www.dolit.cn/download/f/bt/DLBT_SDK_3.7.9_2019.zip?id=3\""\
+                " \"url\":\"http://42.51.203.25/xszr.mp4?id=3\""\
             "},"\
             "{"\
-                " \"url\":\"http://www.dolit.cn/download/f/bt/DLBT_SDK_3.7.9_2019.zip?id=4\""\
+                " \"url\":\"http://42.51.203.25/xszr.mp4?id=4\""\
             "},"\
             "{"\
-                " \"url\":\"http://www.dolit.cn/download/f/bt/DLBT_SDK_3.7.9_2019.zip?id=5\""\
+                " \"url\":\"http://42.51.203.25/xszr.mp4?id=5\""\
             "}"\
         "]"\
     "}"

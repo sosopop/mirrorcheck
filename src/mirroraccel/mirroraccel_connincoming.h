@@ -32,11 +32,13 @@ public:
         ST_QUERY = 0,
         ST_QUERY_END,
         ST_TRANS,
+        ST_CLOSED
     };
 public:
 	std::shared_ptr<Request> getRequest();
     void reset(std::shared_ptr<Request> request);
     void readData(mbuf& buf);
+    Status getStatus();
 private:
     void stop();
     void start();

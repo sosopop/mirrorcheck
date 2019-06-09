@@ -3,6 +3,7 @@
 
 #include "mongoose.h"
 #include "curl/curl.h"
+#include "spdlog/spdlog.h"
 
 namespace mirroraccel
 {
@@ -61,6 +62,7 @@ inline void Request::reset(http_message * hm)
 
 	for (int i = 0; hm->header_names[i].len; i++)
 	{
+        spdlog::debug("{}:{}",std::string(hm->header_names[i].p, hm->header_names[i].len), std::string(hm->header_values[i].p, hm->header_values[i].len));
 		//跳过host，后面需要替换
 		if (mg_vcasecmp(&hm->header_names[i], "Host") == 0)
 		{

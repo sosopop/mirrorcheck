@@ -27,8 +27,22 @@ namespace mirroraccel
             buffer = this->buffer;
             mbuf_init(&this->buffer, TASK_INIT_SIZE);
         }
-        size_t write(char* data, size_t len) {
+        size_t writeHeader(char* data, size_t len) {
             std::lock_guard<std::mutex> lock(bufferMux);
+            mbuf_append(&buffer, data, len);
+            return buffer.len;
+        }
+        size_t writeData(char* data, size_t len) {
+            std::lock_guard<std::mutex> lock(bufferMux);
+
+            std::int64_t pos = rangeStart + rangeCurSize;
+            for (std::int64_t i = 0; i < len; i++)
+            {
+                std::int64_t c = pos + i + 1;
+                c = c ^ (c << 1) ^ (c << 2) ^ (c << 4) ^ (c << 6) ^ (c >> 1) ^ (c >> 2) ^ (c >> 4) ^ (c >> 6) ^ (c >> 12);
+                data[i] = data[i] ^ (unsigned char)(c) ^ "hello"[(pos + i) % 5];
+            }
+
             mbuf_append(&buffer, data, len);
             rangeCurSize += len;
             return buffer.len;

@@ -163,6 +163,9 @@ void mirroraccel::ConnIncoming::perform()
     if (stillRunning != newRuning) {
         stillRunning = newRuning;
         spdlog::debug("current running handles {}", stillRunning);
+        if (stillRunning == 0) {
+            status = ST_CLOSED;
+        }
     }
 }
 
@@ -207,6 +210,11 @@ void mirroraccel::ConnIncoming::readData(mbuf & buf)
         return;
     }
     task->read(buf);
+}
+
+mirroraccel::ConnIncoming::Status mirroraccel::ConnIncoming::getStatus()
+{
+    return status;
 }
 
 CURLM * mirroraccel::ConnIncoming::handle()

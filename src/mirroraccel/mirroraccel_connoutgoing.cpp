@@ -44,6 +44,7 @@ void mirroraccel::ConnOutgoing::stop(bool reset)
 void mirroraccel::ConnOutgoing::end(CURLcode code)
 {
     if (code != CURLE_OK) {
+        spdlog::debug("url:{}, error: {}", mirror->getUrl(), curl_easy_strerror(code));
         if (ST_QUERY == status) {
             status = ST_QUERY_ERROR;
         }
@@ -106,7 +107,7 @@ void mirroraccel::ConnOutgoing::request()
 size_t mirroraccel::ConnOutgoing::writeCallback(char * bufptr, size_t size, size_t nitems, void * userp)
 {
 	ConnOutgoing* conn = static_cast<ConnOutgoing*>(userp);
-    if (conn->task->write(bufptr, size * nitems) > TASK_DATA_SIZE) {
+    if (conn->task->writeData(bufptr, size * nitems) > TASK_DATA_SIZE) {
         conn->status = ST_TRANS_WAIT_BUF_AVALID;
         curl_easy_pause(conn->curl, CURLPAUSE_RECV);
     }
@@ -158,7 +159,7 @@ size_t mirroraccel::ConnOutgoing::headerCallback(char * bufptr, size_t size, siz
                             return 0;
                         }
                         conn->status = ST_TRANS;
-                        conn->task->write((char*)conn->response->headers.c_str(), conn->response->headers.length());
+                        conn->task->writeHeader((char*)conn->response->headers.c_str(), conn->response->headers.length());
                     }
                     else {
                         conn->status = ST_QUERY_END;
@@ -204,10 +205,10 @@ int mirroraccel::ConnOutgoing::xferinfoCallback(void * p, curl_off_t dltotal, cu
             conn->status = ST_TRANS;
             curl_easy_pause(conn->curl, CURLPAUSE_RECV_CONT);
         }
-        spdlog::trace("xferinfoCallback ST_TRANS_WAIT_BUF_AVALID");
+        //spdlog::trace("xferinfoCallback ST_TRANS_WAIT_BUF_AVALID");
     }
     else {
-        spdlog::trace("xferinfoCallback");
+        //spdlog::trace("xferinfoCallback");
     }
     return 0;
 }
