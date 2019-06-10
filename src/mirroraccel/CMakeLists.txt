@@ -15,7 +15,7 @@ endif()
 
 if(UNIX)
 if(NOT ANDROID)
-    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 endif()
 endif()
 
@@ -48,6 +48,9 @@ endif()
 
 if(WIN32)
 add_executable(mirroraccel ${MA_SOURCE})
+target_link_libraries(mirroraccel ${LINK_LIB})
+elseif(APPLE)
+add_library(mirroraccel STATIC ${MA_SOURCE} ${MA_RESOURCE})
 target_link_libraries(mirroraccel ${LINK_LIB})
 else()
 add_library(mirroraccel SHARED ${MA_SOURCE} ${MA_RESOURCE})
