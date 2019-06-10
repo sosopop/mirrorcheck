@@ -14,7 +14,9 @@ if(WIN32)
 endif()
 
 if(UNIX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+if(NOT ANDROID)
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+endif()
 endif()
 
 list(APPEND LINK_LIB 
@@ -39,9 +41,9 @@ endif()
 
 if(ANDROID)
     #error: Android 5.0 and later only support position-independent executables (-fPIE).
-    list(APPEND LINK_LIB "-fPIE -pie")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIE")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIE")
+    #list(APPEND LINK_LIB "-fPIE -pie")
+    #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIE")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIE")
 endif()
 
 if(WIN32)
