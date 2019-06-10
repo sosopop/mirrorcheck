@@ -8,13 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		B351EB2222AE9E2200600D75 /* libmirroraccel.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B351EB2122AE9E2200600D75 /* libmirroraccel.a */; };
-		B351EB2722AEA8AA00600D75 /* libcares.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B351EB2322AEA8AA00600D75 /* libcares.a */; };
-		B351EB2822AEA8AA00600D75 /* libzlibstatic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B351EB2422AEA8AA00600D75 /* libzlibstatic.a */; };
-		B351EB2922AEA8AA00600D75 /* libmongoose.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B351EB2522AEA8AA00600D75 /* libmongoose.a */; };
-		B351EB2A22AEA8AA00600D75 /* libcurl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B351EB2622AEA8AA00600D75 /* libcurl.a */; };
-		B351EB2E22AEACB000600D75 /* libmbedx509.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B351EB2B22AEACAF00600D75 /* libmbedx509.a */; };
-		B351EB2F22AEACB000600D75 /* libmbedcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B351EB2C22AEACB000600D75 /* libmbedcrypto.a */; };
-		B351EB3022AEACB000600D75 /* libmbedtls.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B351EB2D22AEACB000600D75 /* libmbedtls.a */; };
 		B351EB3222AEAEF500600D75 /* libc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = B351EB3122AEAEF500600D75 /* libc++.tbd */; };
 		B351EB3422AEB09400600D75 /* libresolv.9.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = B351EB3322AEB09400600D75 /* libresolv.9.tbd */; };
 		B3D694DB21C1069C00C4BD05 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = B3D694DA21C1069C00C4BD05 /* AppDelegate.m */; };
@@ -55,14 +48,7 @@
 			files = (
 				B351EB3422AEB09400600D75 /* libresolv.9.tbd in Frameworks */,
 				B351EB3222AEAEF500600D75 /* libc++.tbd in Frameworks */,
-				B351EB2E22AEACB000600D75 /* libmbedx509.a in Frameworks */,
-				B351EB2F22AEACB000600D75 /* libmbedcrypto.a in Frameworks */,
-				B351EB3022AEACB000600D75 /* libmbedtls.a in Frameworks */,
-				B351EB2722AEA8AA00600D75 /* libcares.a in Frameworks */,
-				B351EB2A22AEA8AA00600D75 /* libcurl.a in Frameworks */,
 				B351EB2222AE9E2200600D75 /* libmirroraccel.a in Frameworks */,
-				B351EB2922AEA8AA00600D75 /* libmongoose.a in Frameworks */,
-				B351EB2822AEA8AA00600D75 /* libzlibstatic.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
