@@ -18,11 +18,11 @@ if(UNIX)
 endif()
 
 list(APPEND LINK_LIB 
+curl 
+zlibstatic
 mbedcrypto 
 mbedtls 
 mbedx509 
-zlibstatic
-curl 
 cares 
 mongoose 
 )
@@ -44,9 +44,11 @@ if(ANDROID)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIE")
 endif()
 
+if(WIN32)
 add_executable(mirroraccel ${MA_SOURCE})
 target_link_libraries(mirroraccel ${LINK_LIB})
-
-add_library(libmirroraccel SHARED ${MA_SOURCE} ${MA_RESOURCE})
-target_link_libraries(libmirroraccel ${LINK_LIB})
-target_compile_definitions (libmirroraccel PRIVATE "MA_EXPORTS")
+else()
+add_library(mirroraccel SHARED ${MA_SOURCE} ${MA_RESOURCE})
+target_link_libraries(mirroraccel ${LINK_LIB})
+target_compile_definitions (mirroraccel PRIVATE "MA_EXPORTS")
+endif()
