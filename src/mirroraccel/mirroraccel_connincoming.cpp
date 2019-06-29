@@ -164,7 +164,21 @@ void mirroraccel::ConnIncoming::perform()
         stillRunning = newRuning;
         spdlog::debug("current running handles {}", stillRunning);
         if (stillRunning == 0) {
+            status = ST_TRANS_END;
+        }
+    }
+
+    if (status == ST_TRANS_END) {
+        //如果没有准备发送的任务，则关闭连接
+        std::lock_guard<std::mutex> lock(taskDataMux);
+        if (taskWorkingSet.size() == 0) {
             status = ST_CLOSED;
+        }
+        else {
+            std::shared_ptr<Task> task = *taskWorkingSet.begin();
+            if (task->size() == 0) {
+                status = ST_CLOSED;
+            }
         }
     }
 }

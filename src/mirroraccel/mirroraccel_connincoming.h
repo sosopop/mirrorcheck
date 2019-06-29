@@ -32,6 +32,7 @@ public:
         ST_QUERY = 0,
         ST_QUERY_END,
         ST_TRANS,
+        ST_TRANS_END,
         ST_CLOSED
     };
 public:

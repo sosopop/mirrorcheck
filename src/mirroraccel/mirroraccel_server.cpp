@@ -117,12 +117,16 @@ void mirroraccel::Server::eventHandler(struct mg_connection *nc, int ev, void *p
         conn = static_cast<ConnIncoming *>(nc->user_data);
         mg_set_timer(nc, mg_time() + 0.05);
 
+        struct mbuf *io = &nc->send_mbuf;
         if (conn->getStatus() == ConnIncoming::ST_CLOSED) {
-            nc->flags |= MG_F_CLOSE_IMMEDIATELY;
+            //如果数据全部发送出去，则关闭连接
+            if (io->len == 0)
+            {
+                nc->flags |= MG_F_CLOSE_IMMEDIATELY;
+            }
             return;
         }
 
-        struct mbuf *io = &nc->send_mbuf;
         if (io->len > MAX_CONN_CACHE_SIZE) {
             //等待消费完毕，再去读取
             return;
