@@ -3,43 +3,43 @@ cmake .. "-DCMAKE_TOOLCHAIN_FILE='/Users/sosopop/code/ios-cmake/ios.toolchain.cm
 cmake .. "-DCMAKE_TOOLCHAIN_FILE='/Users/sosopop/code/ios-cmake/ios.toolchain.cmake'" -DPLATFORM=OS64 -DENABLE_VISIBILITY=TRUE
 
 
-ranlib /Users/sosopop/code/mirroraccel/publish/mirroraccel/libos/libcares.a
-ranlib /Users/sosopop/code/mirroraccel/publish/mirroraccel/libos/libcurl.a
-ranlib /Users/sosopop/code/mirroraccel/publish/mirroraccel/libos/libmbedcrypto.a
-ranlib /Users/sosopop/code/mirroraccel/publish/mirroraccel/libos/libmbedtls.a
-ranlib /Users/sosopop/code/mirroraccel/publish/mirroraccel/libos/libmbedx509.a
-ranlib /Users/sosopop/code/mirroraccel/publish/mirroraccel/libos/libmirroraccel.a
-ranlib /Users/sosopop/code/mirroraccel/publish/mirroraccel/libos/libmongoose.a
-ranlib /Users/sosopop/code/mirroraccel/publish/mirroraccel/libos/libzlibstatic.a
+ranlib /Users/sosopop/code/mirroraccel/ios/3rdparty/c-ares/lib/libcares.a
+ranlib /Users/sosopop/code/mirroraccel/ios/3rdparty/curl/lib/libcurl.a
+ranlib /Users/sosopop/code/mirroraccel/ios/3rdparty/mbedtls/library/libmbedcrypto.a
+ranlib /Users/sosopop/code/mirroraccel/ios/3rdparty/mbedtls/library/libmbedtls.a
+ranlib /Users/sosopop/code/mirroraccel/ios/3rdparty/mbedtls/library/libmbedx509.a
+ranlib /Users/sosopop/code/mirroraccel/ios/3rdparty/mongoose/libmongoose.a
+ranlib /Users/sosopop/code/mirroraccel/ios/3rdparty/zlib/libzlibstatic.a
+ranlib /Users/sosopop/code/mirroraccel/ios/src/mirroraccel/libmirroraccel.a
 
-/usr/bin/libtool -static -o /Users/sosopop/code/mirroraccel/publish/mirroraccel/libos/libmirroraccel_os.a \
-/Users/sosopop/code/mirroraccel/publish/mirroraccel/libos/libcares.a \
-/Users/sosopop/code/mirroraccel/publish/mirroraccel/libos/libcurl.a \
-/Users/sosopop/code/mirroraccel/publish/mirroraccel/libos/libmbedcrypto.a \
-/Users/sosopop/code/mirroraccel/publish/mirroraccel/libos/libmbedtls.a \
-/Users/sosopop/code/mirroraccel/publish/mirroraccel/libos/libmbedx509.a \
-/Users/sosopop/code/mirroraccel/publish/mirroraccel/libos/libmirroraccel.a \
-/Users/sosopop/code/mirroraccel/publish/mirroraccel/libos/libmongoose.a \
-/Users/sosopop/code/mirroraccel/publish/mirroraccel/libos/libzlibstatic.a
+/usr/bin/libtool -static -o /Users/sosopop/code/mirroraccel/libmirroraccel_simulator.a \
+/Users/sosopop/code/mirroraccel/ios/3rdparty/c-ares/lib/libcares.a \
+/Users/sosopop/code/mirroraccel/ios/3rdparty/curl/lib/libcurl.a \
+/Users/sosopop/code/mirroraccel/ios/3rdparty/mbedtls/library/libmbedcrypto.a \
+/Users/sosopop/code/mirroraccel/ios/3rdparty/mbedtls/library/libmbedtls.a \
+/Users/sosopop/code/mirroraccel/ios/3rdparty/mbedtls/library/libmbedx509.a \
+/Users/sosopop/code/mirroraccel/ios/3rdparty/mongoose/libmongoose.a \
+/Users/sosopop/code/mirroraccel/ios/3rdparty/zlib/libzlibstatic.a \
+/Users/sosopop/code/mirroraccel/ios/src/mirroraccel/libmirroraccel.a
 
 
-ranlib /Users/sosopop/code/mirroraccel/publish/mirroraccel/libsim/libcares.a
-ranlib /Users/sosopop/code/mirroraccel/publish/mirroraccel/libsim/libcurl.a
-ranlib /Users/sosopop/code/mirroraccel/publish/mirroraccel/libsim/libmbedcrypto.a
-ranlib /Users/sosopop/code/mirroraccel/publish/mirroraccel/libsim/libmbedtls.a
-ranlib /Users/sosopop/code/mirroraccel/publish/mirroraccel/libsim/libmbedx509.a
-ranlib /Users/sosopop/code/mirroraccel/publish/mirroraccel/libsim/libmirroraccel.a
-ranlib /Users/sosopop/code/mirroraccel/publish/mirroraccel/libsim/libmongoose.a
-ranlib /Users/sosopop/code/mirroraccel/publish/mirroraccel/libsim/libzlibstatic.a
+ranlib /Users/sosopop/code/mirroraccel/ios/3rdparty/c-ares/lib/libcares.a
+ranlib /Users/sosopop/code/mirroraccel/ios/3rdparty/curl/lib/libcurl.a
+ranlib /Users/sosopop/code/mirroraccel/ios/3rdparty/mbedtls/library/libmbedcrypto.a
+ranlib /Users/sosopop/code/mirroraccel/ios/3rdparty/mbedtls/library/libmbedtls.a
+ranlib /Users/sosopop/code/mirroraccel/ios/3rdparty/mbedtls/library/libmbedx509.a
+ranlib /Users/sosopop/code/mirroraccel/ios/3rdparty/mongoose/libmongoose.a
+ranlib /Users/sosopop/code/mirroraccel/ios/3rdparty/zlib/libzlibstatic.a
+ranlib /Users/sosopop/code/mirroraccel/ios/src/mirroraccel/libmirroraccel.a
 
-/usr/bin/libtool -static -o /Users/sosopop/code/mirroraccel/publish/mirroraccel/libsim/libmirroraccel_simulator.a \
-/Users/sosopop/code/mirroraccel/publish/mirroraccel/libsim/libcares.a \
-/Users/sosopop/code/mirroraccel/publish/mirroraccel/libsim/libcurl.a \
-/Users/sosopop/code/mirroraccel/publish/mirroraccel/libsim/libmbedcrypto.a \
-/Users/sosopop/code/mirroraccel/publish/mirroraccel/libsim/libmbedtls.a \
-/Users/sosopop/code/mirroraccel/publish/mirroraccel/libsim/libmbedx509.a \
-/Users/sosopop/code/mirroraccel/publish/mirroraccel/libsim/libmirroraccel.a \
-/Users/sosopop/code/mirroraccel/publish/mirroraccel/libsim/libmongoose.a \
-/Users/sosopop/code/mirroraccel/publish/mirroraccel/libsim/libzlibstatic.a
+/usr/bin/libtool -static -o /Users/sosopop/code/mirroraccel/libmirroraccel_os.a \
+/Users/sosopop/code/mirroraccel/ios/3rdparty/c-ares/lib/libcares.a \
+/Users/sosopop/code/mirroraccel/ios/3rdparty/curl/lib/libcurl.a \
+/Users/sosopop/code/mirroraccel/ios/3rdparty/mbedtls/library/libmbedcrypto.a \
+/Users/sosopop/code/mirroraccel/ios/3rdparty/mbedtls/library/libmbedtls.a \
+/Users/sosopop/code/mirroraccel/ios/3rdparty/mbedtls/library/libmbedx509.a \
+/Users/sosopop/code/mirroraccel/ios/3rdparty/mongoose/libmongoose.a \
+/Users/sosopop/code/mirroraccel/ios/3rdparty/zlib/libzlibstatic.a \
+/Users/sosopop/code/mirroraccel/ios/src/mirroraccel/libmirroraccel.a
 
 lipo -create -output libmirroraccel.a libmirroraccel_os.a libmirroraccel_simulator.a
