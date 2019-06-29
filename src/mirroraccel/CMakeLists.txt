@@ -37,6 +37,7 @@ endif()
 
 if(ANDROID)
     list(REMOVE_ITEM LINK_LIB pthread)
+    list(APPEND LINK_LIB log)
 endif()
 
 if(ANDROID)

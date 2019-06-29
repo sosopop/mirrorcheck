@@ -13,7 +13,7 @@ public:
     ~Except();
 
 public:
-    const char *what();
+    const char *what() const _NOEXCEPT;
 
 public:
     std::string msg;

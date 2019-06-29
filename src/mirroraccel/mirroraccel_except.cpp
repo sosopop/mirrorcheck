@@ -9,7 +9,7 @@ mirroraccel::Except::~Except()
 {
 }
 
-const char *mirroraccel::Except::what()
+const char *mirroraccel::Except::what() const _NOEXCEPT
 {
     return msg.c_str();
 }
