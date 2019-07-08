@@ -41,7 +41,7 @@ struct Task
     {
         std::lock_guard<std::mutex> lock(bufferMux);
         if (rangeCurSize + len > rangeSize)
-            len = rangeSize - rangeCurSize;
+            len = (size_t)(rangeSize - rangeCurSize);
 
         std::int64_t pos = rangeStart + rangeCurSize;
         for (std::int64_t i = 0; i < len; i++)

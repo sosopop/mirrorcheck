@@ -306,5 +306,10 @@ std::shared_ptr<mirroraccel::Task> mirroraccel::ConnIncoming::fetchTask()
         rangeStart, TASK_DATA_SIZE);
 
     rangeStart += rangeCurSize;
+
+    {
+        std::lock_guard<std::mutex> lock(taskDataMux);
+        taskWorkingSet.insert(task);
+    }
     return task;
 }

@@ -9,7 +9,11 @@ mirroraccel::Except::~Except()
 {
 }
 
+#ifdef WIN32
+const char *mirroraccel::Except::what() const
+#else
 const char *mirroraccel::Except::what() const _NOEXCEPT
+#endif
 {
     return msg.c_str();
 }

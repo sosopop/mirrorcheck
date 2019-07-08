@@ -49,7 +49,13 @@ void mirroraccel::ConnOutgoing::end(CURLcode code)
         spdlog::debug("url:{}, error: {}", mirror->getUrl(), curl_easy_strerror(code));
         if (ST_QUERY == status)
         {
-            status = ST_QUERY_ERROR;
+            if (code == CURLE_WRITE_ERROR ||
+                code == CURLE_ABORTED_BY_CALLBACK) {
+                status = ST_QUERY_END;
+            }
+            else {
+                status = ST_QUERY_ERROR;
+            }
         }
     }
 }
@@ -64,7 +70,7 @@ std::shared_ptr<mirroraccel::Response> mirroraccel::ConnOutgoing::getResponse()
     return response;
 }
 
-void mirroraccel::ConnOutgoing::query()
+void mirroraccel::ConnOutgoing::query( Status st )
 {
     if (!curl)
     {
@@ -100,13 +106,18 @@ void mirroraccel::ConnOutgoing::query()
 
 void mirroraccel::ConnOutgoing::request()
 {
-    if (status == ST_TRANS)
-    {
+    if (ST_QUERY_END != status &&
+        ST_TRANS != status &&
+        ST_QUERY_ERROR != status) {
+
+    }
+    auto task = incoming.fetchTask();
+    if (task == nullptr) {
         return;
     }
     //第二期支持多连接传输
-    status = ST_TRANS;
-    spdlog::debug("准备发起 request：{}", mirror->getUrl());
+    spdlog::debug("准备发起 task request：{}", mirror->getUrl());
+    query(ST_TRANS);
 }
 
 size_t mirroraccel::ConnOutgoing::writeCallback(char *bufptr, size_t size, size_t nitems, void *userp)

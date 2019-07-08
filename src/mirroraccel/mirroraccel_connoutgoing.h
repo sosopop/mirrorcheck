@@ -32,7 +32,7 @@ public:
         ST_STOPED
     };
 public:
-    void query();
+    void query( Status st = ST_QUERY);
     void request();
     void stop(bool reset = true);
     void end(CURLcode code);
