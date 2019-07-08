@@ -72,7 +72,10 @@
         "algorithm": "cpp",
         "*.tcc": "cpp",
         "condition_variable": "cpp",
-        "new": "cpp"
+        "new": "cpp",
+        "codecvt": "cpp",
+        "deque": "cpp",
+        "regex": "cpp"
     },
     "editor.formatOnSave": true,
     "C_Cpp.configurationWarnings": "Disabled"
