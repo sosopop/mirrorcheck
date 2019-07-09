@@ -27,7 +27,9 @@ mirroraccel::ConnOutgoing::~ConnOutgoing()
 
 void mirroraccel::ConnOutgoing::stop(bool reset)
 {
-    spdlog::debug("停止对外镜像连接, {}", mirror->getUrl());
+    if(status == ST_TRANS)
+        spdlog::debug("停止对外镜像连接, {}", mirror->getUrl());
+
     headers.clear();
     curl_multi_remove_handle(incoming.handle(), curl);
     if (reset)
@@ -44,18 +46,23 @@ void mirroraccel::ConnOutgoing::stop(bool reset)
 
 void mirroraccel::ConnOutgoing::end(CURLcode code)
 {
-    if (code != CURLE_OK)
-    {
+    if (code == CURLE_WRITE_ERROR ||
+        code == CURLE_ABORTED_BY_CALLBACK ||
+        code == CURLE_OK) {
+        if (status == ST_TRANS) {
+            status = ST_TRANS_END;
+        }
+        else if (status == ST_QUERY) {
+            status = ST_QUERY_END;
+        }
+    }
+    else {
         spdlog::debug("url:{}, error: {}", mirror->getUrl(), curl_easy_strerror(code));
-        if (ST_QUERY == status)
-        {
-            if (code == CURLE_WRITE_ERROR ||
-                code == CURLE_ABORTED_BY_CALLBACK) {
-                status = ST_QUERY_END;
-            }
-            else {
-                status = ST_QUERY_ERROR;
-            }
+        if (status == ST_TRANS) {
+            stop();
+        }
+        else if (status == ST_QUERY) {
+            status = ST_QUERY_ERROR;
         }
     }
 }
@@ -81,7 +88,7 @@ void mirroraccel::ConnOutgoing::query( Status st )
         stop(true);
     }
 
-    status = ST_QUERY;
+    status = st;
     curl_multi_add_handle(incoming.handle(), curl);
 
     auto request = incoming.getRequest();
@@ -102,17 +109,18 @@ void mirroraccel::ConnOutgoing::query( Status st )
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
     curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, xferinfoCallback);
     curl_easy_setopt(curl, CURLOPT_XFERINFODATA, this);
+
+    if (task != nullptr) {
+        auto range = fmt::format("{}-{}", task->rangeStart, task->rangeStart + task->rangeSize - 1);
+        curl_easy_setopt(curl, CURLOPT_RANGE, range.c_str());
+    }
 }
 
 void mirroraccel::ConnOutgoing::request()
 {
-    if (ST_QUERY_END != status &&
-        ST_TRANS != status &&
-        ST_QUERY_ERROR != status) {
-
-    }
-    auto task = incoming.fetchTask();
+    task = incoming.fetchTask();
     if (task == nullptr) {
+        stop();
         return;
     }
     //第二期支持多连接传输
@@ -123,8 +131,9 @@ void mirroraccel::ConnOutgoing::request()
 size_t mirroraccel::ConnOutgoing::writeCallback(char *bufptr, size_t size, size_t nitems, void *userp)
 {
     ConnOutgoing *conn = static_cast<ConnOutgoing *>(userp);
-    if (conn->task->finished())
+    if (conn->task->wirteFinished())
     {
+        conn->status = ST_TRANS_END;
         return 0;
     }
     if (conn->task->writeData(bufptr, size * nitems) > TASK_MAX_BUFFER_SIZE)
@@ -185,11 +194,11 @@ size_t mirroraccel::ConnOutgoing::headerCallback(char *bufptr, size_t size, size
                         conn->task = conn->incoming.fetchTask();
                         if (conn->task == nullptr)
                         {
-                            conn->status = ST_QUERY_ERROR;
+                            conn->status = ST_STOPED;
                             return 0;
                         }
                         conn->status = ST_TRANS;
-                        conn->task->writeHeader((char *)conn->response->headers.c_str(), conn->response->headers.length());
+                        conn->incoming.writeHeader(conn->response->headers);
                     }
                     else
                     {

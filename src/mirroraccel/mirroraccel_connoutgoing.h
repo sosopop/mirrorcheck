@@ -28,6 +28,7 @@ public:
         ST_QUERY_END,
         ST_QUERY_ERROR,
         ST_TRANS,
+        ST_TRANS_END,
         ST_TRANS_WAIT_BUF_AVALID,
         ST_STOPED
     };

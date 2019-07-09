@@ -39,6 +39,7 @@ public:
 	std::shared_ptr<Request> getRequest();
     void reset(std::shared_ptr<Request> request);
     void readData(mbuf& buf);
+    void writeHeader(const std::string& header);
     Status getStatus();
 private:
     void stop();
@@ -86,6 +87,7 @@ private:
     std::int64_t rangeSize = 0;
     std::int64_t rangeCurSize = 0;
     //工作任务列表
+    std::string header;
     std::set<std::shared_ptr<Task>> taskWorkingSet;
     std::mutex taskDataMux;
 };

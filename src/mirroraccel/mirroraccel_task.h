@@ -21,6 +21,10 @@ struct Task
     {
         mbuf_init(&buffer, TASK_INIT_SIZE);
     }
+    ~Task()
+    {
+        mbuf_free(&buffer);
+    }
     bool operator<(const Task &task) const
     {
         return this->rangeStart < task.rangeStart;
@@ -29,21 +33,16 @@ struct Task
     {
         std::lock_guard<std::mutex> lock(bufferMux);
         buffer = this->buffer;
+        rangeCurReadSize += buffer.len;
         mbuf_init(&this->buffer, TASK_INIT_SIZE);
-    }
-    size_t writeHeader(char *data, size_t len)
-    {
-        std::lock_guard<std::mutex> lock(bufferMux);
-        mbuf_append(&buffer, data, len);
-        return buffer.len;
     }
     size_t writeData(char *data, size_t len)
     {
         std::lock_guard<std::mutex> lock(bufferMux);
-        if (rangeCurSize + len > rangeSize)
-            len = (size_t)(rangeSize - rangeCurSize);
+        if (rangeCurWriteSize + len > rangeSize)
+            len = (size_t)(rangeSize - rangeCurWriteSize);
 
-        std::int64_t pos = rangeStart + rangeCurSize;
+        std::int64_t pos = rangeStart + rangeCurWriteSize;
         for (std::int64_t i = 0; i < len; i++)
         {
             std::int64_t c = pos + i + 1;
@@ -52,7 +51,7 @@ struct Task
         }
 
         mbuf_append(&buffer, data, len);
-        rangeCurSize += len;
+        rangeCurWriteSize += len;
         return buffer.len;
     }
     size_t size()
@@ -61,13 +60,18 @@ struct Task
         size_t len = buffer.len;
         return len;
     }
-    bool finished()
+    bool wirteFinished()
     {
-        return rangeCurSize == rangeSize;
+        return rangeCurWriteSize == rangeSize;
+    }
+    bool readFinished()
+    {
+        return rangeCurReadSize == rangeSize;
     }
     std::int64_t rangeStart = 0;
     std::int64_t rangeSize = 0;
-    std::int64_t rangeCurSize = 0;
+    std::int64_t rangeCurWriteSize = 0;
+    std::int64_t rangeCurReadSize = 0;
     //开始时间戳
     std::int64_t startTime = std::chrono::steady_clock::now().time_since_epoch().count();
     mbuf buffer;

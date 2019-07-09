@@ -43,3 +43,9 @@ ranlib /Users/sosopop/code/mirroraccel/ios/src/mirroraccel/libmirroraccel.a
 /Users/sosopop/code/mirroraccel/ios/src/mirroraccel/libmirroraccel.a
 
 lipo -create -output libmirroraccel.a libmirroraccel_os.a libmirroraccel_simulator.a
+
+
+
+在一个镜像的情况下不切割请求
+修改缓存限速判断
+task排序问题

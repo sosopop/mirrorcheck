@@ -87,9 +87,23 @@ void mirroraccel::ConnIncoming::dispatch()
         for (auto co : conns)
         {
             //排除掉已经开始下载的连接
-            if (co->getStatus() == ConnOutgoing::ST_QUERY || co->getStatus() == ConnOutgoing::ST_QUERY_END)
+            auto st = co->getStatus();
+            switch (st)
             {
+            case ConnOutgoing::ST_QUERY_ERROR:
                 co->stop();
+                break;
+            case ConnOutgoing::ST_QUERY:
+            case ConnOutgoing::ST_QUERY_END:
+            case ConnOutgoing::ST_TRANS_END:
+                co->request();
+                break;
+            case ConnOutgoing::ST_TRANS:
+            case ConnOutgoing::ST_STOPED:
+                break;
+            default:
+                co->stop();
+                break;
             }
         }
         break;
@@ -228,16 +242,34 @@ void mirroraccel::ConnIncoming::reset(std::shared_ptr<Request> request)
 void mirroraccel::ConnIncoming::readData(mbuf &buf)
 {
     std::lock_guard<std::mutex> lock(taskDataMux);
-    if (taskWorkingSet.size() == 0)
-    {
+    //如果有http头，先发送http头
+    if (!header.empty()) {
+        mbuf_init(&buf, header.length());
+        mbuf_append(&buf, header.c_str(), header.length());
+        header = "";
         return;
     }
-    std::shared_ptr<Task> task = *taskWorkingSet.begin();
-    if (task->size() == 0)
-    {
-        return;
+    std::shared_ptr<Task> task = nullptr;
+    auto iter = taskWorkingSet.begin();
+    while (iter != taskWorkingSet.end()) {
+        task = *iter;
+        if (task->readFinished())
+        {
+            taskWorkingSet.erase(task);
+            iter = taskWorkingSet.begin();
+        }
+        else {
+            break;
+        }
     }
-    task->read(buf);
+    if(task != nullptr)
+        task->read(buf);
+}
+
+void mirroraccel::ConnIncoming::writeHeader(const std::string& header)
+{
+    std::lock_guard<std::mutex> lock(taskDataMux);
+    this->header = header;
 }
 
 mirroraccel::ConnIncoming::Status mirroraccel::ConnIncoming::getStatus()
@@ -300,12 +332,11 @@ std::shared_ptr<mirroraccel::Task> mirroraccel::ConnIncoming::fetchTask()
     {
         readSize = TASK_DATA_SIZE;
     }
-    rangeCurSize += readSize;
 
     auto task = std::make_shared<Task>(
-        rangeStart, TASK_DATA_SIZE);
+        rangeStart + rangeCurSize, TASK_DATA_SIZE);
 
-    rangeStart += rangeCurSize;
+    rangeCurSize += readSize;
 
     {
         std::lock_guard<std::mutex> lock(taskDataMux);
