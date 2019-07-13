@@ -49,3 +49,5 @@ lipo -create -output libmirroraccel.a libmirroraccel_os.a libmirroraccel_simulat
 在一个镜像的情况下不切割请求
 修改缓存限速判断
 task排序问题
+根据请求大小平均分配下载任务
+任务淘汰

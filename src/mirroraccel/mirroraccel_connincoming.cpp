@@ -194,18 +194,18 @@ void mirroraccel::ConnIncoming::perform()
     {
         //如果没有准备发送的任务，则关闭连接
         std::lock_guard<std::mutex> lock(taskDataMux);
-        if (taskWorkingSet.size() == 0)
+        if (taskWorkingList.size() == 0)
         {
             status = ST_CLOSED;
         }
-        else
-        {
-            std::shared_ptr<Task> task = *taskWorkingSet.begin();
-            if (task->size() == 0)
-            {
-                status = ST_CLOSED;
-            }
-        }
+        //else
+        //{
+        //    std::shared_ptr<Task> task = *taskWorkingList.begin();
+        //    if (task->size() == 0)
+        //    {
+        //        status = ST_CLOSED;
+        //    }
+        //}
     }
 }
 
@@ -250,20 +250,17 @@ void mirroraccel::ConnIncoming::readData(mbuf &buf)
         return;
     }
     std::shared_ptr<Task> task = nullptr;
-    auto iter = taskWorkingSet.begin();
-    while (iter != taskWorkingSet.end()) {
-        task = *iter;
-        if (task->readFinished())
-        {
-            taskWorkingSet.erase(task);
-            iter = taskWorkingSet.begin();
-        }
-        else {
-            break;
-        }
+    auto it = taskWorkingList.begin();
+    if (it == taskWorkingList.end()) {
+        return;
     }
-    if(task != nullptr)
+    task = *it;
+
+    if (task != nullptr && task->size())
         task->read(buf);
+
+    if (task->readFinished())
+        taskWorkingList.pop_front();
 }
 
 void mirroraccel::ConnIncoming::writeHeader(const std::string& header)
@@ -337,10 +334,6 @@ std::shared_ptr<mirroraccel::Task> mirroraccel::ConnIncoming::fetchTask()
         rangeStart + rangeCurSize, TASK_DATA_SIZE);
 
     rangeCurSize += readSize;
-
-    {
-        std::lock_guard<std::mutex> lock(taskDataMux);
-        taskWorkingSet.insert(task);
-    }
+    taskWorkingList.push_back(task);
     return task;
 }

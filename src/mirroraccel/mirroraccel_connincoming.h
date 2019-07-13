@@ -88,7 +88,7 @@ private:
     std::int64_t rangeCurSize = 0;
     //工作任务列表
     std::string header;
-    std::set<std::shared_ptr<Task>> taskWorkingSet;
+    std::list<std::shared_ptr<Task>> taskWorkingList;
     std::mutex taskDataMux;
 };
 } // namespace mirroraccel
