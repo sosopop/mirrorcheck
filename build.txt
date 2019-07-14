@@ -51,3 +51,4 @@ lipo -create -output libmirroraccel.a libmirroraccel_os.a libmirroraccel_simulat
 task排序问题
 根据请求大小平均分配下载任务
 任务淘汰
+断点时间过长的话，会无法断开，0 handle一直运行

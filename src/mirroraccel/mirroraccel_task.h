@@ -11,7 +11,7 @@ enum
 {
     TASK_INIT_SIZE = 32 * 1024,
     TASK_MAX_BUFFER_SIZE = 1024 * 1024,
-    TASK_DATA_SIZE = 1024 * 1024
+    TASK_DATA_SIZE = 512 * 1024
 };
 class ConnOutgoing;
 struct Task

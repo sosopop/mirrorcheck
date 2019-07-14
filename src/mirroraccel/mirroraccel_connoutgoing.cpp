@@ -114,6 +114,11 @@ void mirroraccel::ConnOutgoing::query( Status st )
         auto range = fmt::format("{}-{}", task->rangeStart, task->rangeStart + task->rangeSize - 1);
         curl_easy_setopt(curl, CURLOPT_RANGE, range.c_str());
     }
+    else {
+        if (!request->getRange().empty()) {
+            curl_easy_setopt(curl, CURLOPT_RANGE, request->getRange().c_str());
+        }
+    }
 }
 
 void mirroraccel::ConnOutgoing::request()
@@ -158,7 +163,9 @@ size_t mirroraccel::ConnOutgoing::headerCallback(char *bufptr, size_t size, size
             }
             std::string header(bufptr, size * nitems);
             conn->response->headers += header;
-            spdlog::debug("{}", header);
+            if (header.length() > 2) {
+                spdlog::debug("{}", header.substr(0, header.length()-2));
+            }
 
             //匹配返回码
             if (conn->headers.size() == 0)
@@ -187,6 +194,7 @@ size_t mirroraccel::ConnOutgoing::headerCallback(char *bufptr, size_t size, size
                 //header完成
                 if (header == "\r\n")
                 {
+                    spdlog::debug("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
                     if (conn->incoming.onQueryEnd(conn, conn->response))
                     {
                         //第一个获取到任务的连接直接进入传输状态

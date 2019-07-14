@@ -122,6 +122,7 @@ void mirroraccel::Server::eventHandler(struct mg_connection *nc, int ev, void *p
             //如果数据全部发送出去，则关闭连接
             if (io->len == 0)
             {
+                spdlog::debug("内部关闭连接");
                 nc->flags |= MG_F_CLOSE_IMMEDIATELY;
             }
             return;

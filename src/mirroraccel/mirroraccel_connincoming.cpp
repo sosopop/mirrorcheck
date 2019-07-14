@@ -325,13 +325,13 @@ std::shared_ptr<mirroraccel::Task> mirroraccel::ConnIncoming::fetchTask()
     */
     //后期开发任务分段
     auto readSize = rangeSize - rangeCurSize;
-    if (readSize > TASK_DATA_SIZE)
+    if (readSize > TASK_DATA_SIZE && conns.size() > 1)
     {
         readSize = TASK_DATA_SIZE;
     }
 
     auto task = std::make_shared<Task>(
-        rangeStart + rangeCurSize, TASK_DATA_SIZE);
+        rangeStart + rangeCurSize, readSize);
 
     rangeCurSize += readSize;
     taskWorkingList.push_back(task);

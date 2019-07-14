@@ -4,6 +4,7 @@
 #include "mongoose.h"
 #include "curl/curl.h"
 #include "spdlog/spdlog.h"
+#include <regex>
 
 namespace mirroraccel
 {
@@ -20,11 +21,13 @@ private:
 
 public:
     std::string getUrl();
+    std::string getRange();
     struct curl_slist *getHeaders();
 	void reset(struct http_message *hm);
 
 private:
     std::string host;
+    std::string range;
     std::string url;
     std::string qs;
     struct curl_slist *headers = nullptr;
@@ -50,6 +53,11 @@ inline std::string Request::getUrl()
     return url + "?" + qs;
 }
 
+inline std::string Request::getRange()
+{
+    return range;
+}
+
 inline struct curl_slist *Request::getHeaders()
 {
     return headers;
@@ -68,7 +76,17 @@ inline void Request::reset(http_message * hm)
 		{
 			host.assign(hm->header_values[i].p, hm->header_values[i].len);
 			continue;
-		}
+		} 
+        else if (mg_vcasecmp(&hm->header_names[i], "Range") == 0)
+        {
+            std::smatch matched;
+            std::string range(hm->header_values[i].p, hm->header_values[i].len);
+            if (std::regex_search(range, matched, std::regex("\\d+-\\d*"), std::regex_constants::match_any) && matched.size() == 1)
+            {
+                this->range = matched[0];
+            }
+            continue;
+        }
 
 		headers = curl_slist_append(
 			headers,
