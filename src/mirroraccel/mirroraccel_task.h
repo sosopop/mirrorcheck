@@ -66,6 +66,10 @@ struct Task
     {
         return rangeCurReadSize == rangeSize;
     }
+    bool emptyBuffer()
+    {
+        return rangeCurWriteSize == rangeCurReadSize;
+    }
     std::int64_t rangeStart = 0;
     std::int64_t rangeSize = 0;
     std::int64_t rangeCurWriteSize = 0;

@@ -101,6 +101,8 @@ void mirroraccel::ConnOutgoing::query( Status st )
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
     curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 3);
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, 5000);
+    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 2);
+    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 10);
     curl_easy_setopt(curl, CURLOPT_ENCODING, "");
     curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, &headerCallback);
     curl_easy_setopt(curl, CURLOPT_HEADERDATA, this);

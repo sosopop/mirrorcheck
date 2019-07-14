@@ -198,6 +198,13 @@ void mirroraccel::ConnIncoming::perform()
         {
             status = ST_CLOSED;
         }
+        else
+        {
+            std::shared_ptr<Task> task = *taskWorkingList.begin();
+            if (task->emptyBuffer()) {
+                status = ST_CLOSED;
+            }
+        }
         //else
         //{
         //    std::shared_ptr<Task> task = *taskWorkingList.begin();
