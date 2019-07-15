@@ -18,6 +18,10 @@ namespace mirroraccel
             : rangeStart(rangeStart), rangeSize(rangeSize) {
             mbuf_init(&buffer, TASK_INIT_SIZE);
         }
+        ~Task()
+        {
+            mbuf_free(&buffer);
+        }
         bool operator < (const Task& task) const
         {
             return this->rangeStart < task.rangeStart;

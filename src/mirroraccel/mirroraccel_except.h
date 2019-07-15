@@ -13,7 +13,11 @@ public:
     ~Except();
 
 public:
-    const char *what() const _NOEXCEPT;
+#ifdef WIN32
+    const char* what() const;
+#else
+    const char* what() const _NOEXCEPT;
+#endif
 
 public:
     std::string msg;
