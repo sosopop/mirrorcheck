@@ -54,3 +54,5 @@ lipo -create -output libmirroraccel.a libmirroraccel_os.a libmirroraccel_simulat
 @断点时间过长的话，会无法断开，0 handle一直运行
 @测试小rangeSize下载
 视频播放由的时候会有错误卡住
+task->readFinished() 断点后 连接不关闭
+连接因为错误关闭后，会导致对应的任务没有关联的连接，从而任务无法再继续下载**（重要问题）

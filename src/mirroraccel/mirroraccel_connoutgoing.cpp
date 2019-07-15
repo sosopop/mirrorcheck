@@ -23,6 +23,7 @@ mirroraccel::ConnOutgoing::ConnOutgoing(
 mirroraccel::ConnOutgoing::~ConnOutgoing()
 {
     spdlog::debug("移除连接, {}", mirror->getUrl());
+    debug = fmt::format("移除连接, {}", mirror->getUrl());
     stop(false);
 }
 
@@ -60,7 +61,8 @@ void mirroraccel::ConnOutgoing::end(CURLcode code)
     }
     else {
         spdlog::debug("url:{}, error: {}", mirror->getUrl(), curl_easy_strerror(code));
-        if (status == ST_TRANS) {
+        if (status == ST_TRANS || status == ST_TRANS_WAIT_BUF_AVALID) {
+            debug = fmt::format("url:{}, error: {}", mirror->getUrl(), curl_easy_strerror(code));
             stop();
         }
         else if (status == ST_QUERY) {
@@ -97,6 +99,7 @@ void mirroraccel::ConnOutgoing::query( Status st )
     }
     else
     {
+        debug = "curl = curl_easy_init();";
         stop(true);
     }
 
@@ -140,6 +143,7 @@ bool mirroraccel::ConnOutgoing::request()
 {
     task = incoming.fetchTask(task);
     if (task == nullptr) {
+        debug = "task == nullptr";
         stop();
         return false;
     }
@@ -220,6 +224,7 @@ size_t mirroraccel::ConnOutgoing::headerCallback(char *bufptr, size_t size, size
                         conn->task = conn->incoming.fetchTask(conn->task);
                         if (conn->task == nullptr)
                         {
+                            conn->debug = "conn->status = ST_STOPED;";
                             conn->status = ST_STOPED;
                             return 0;
                         }

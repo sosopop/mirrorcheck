@@ -4,6 +4,7 @@
 #include <chrono>
 #include <mutex>
 #include "mongoose.h"
+#include "spdlog/spdlog.h"
 
 namespace mirroraccel
 {
@@ -19,6 +20,7 @@ struct Task
     Task(std::int64_t rangeStart, std::int64_t rangeSize)
         : rangeStart(rangeStart), rangeSize(rangeSize)
     {
+        spdlog::debug("新建任务 rangeStart {} rangeSize {}", rangeStart, rangeSize);
         mbuf_init(&buffer, TASK_INIT_SIZE);
     }
     ~Task()
@@ -32,6 +34,10 @@ struct Task
             buffer = this->buffer;
             rangeCurReadSize += buffer.len;
             mbuf_init(&this->buffer, TASK_INIT_SIZE);
+            spdlog::debug(
+                "read rangeStart {} rangeSize {} rangeCurWriteSize {} rangeCurReadSize {}", 
+                rangeStart, rangeSize, rangeCurWriteSize, rangeCurReadSize
+            );
         }
     }
     size_t writeData(char *data, size_t len)

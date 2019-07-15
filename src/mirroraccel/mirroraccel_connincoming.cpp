@@ -93,8 +93,18 @@ void mirroraccel::ConnIncoming::dispatch()
             auto st = co->getStatus();
             switch (st)
             {
-            case ConnOutgoing::ST_QUERY_ERROR:
             case ConnOutgoing::ST_STOPED:
+                co->stop();
+            case ConnOutgoing::ST_QUERY_ERROR:
+#ifdef _DEBUG
+                if (co->getTask()->rangeSize != co->getTask()->rangeCurReadSize) {
+                    spdlog::debug("failed {} @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ {} *** {}", ConnOutgoing::ST_QUERY_ERROR, co->getTask()->rangeSize, co->getTask()->rangeCurReadSize);
+                    int a = 0;
+                }
+#endif
+                if (conns.size() == 1) {
+                    spdlog::debug("清空连接 ST_QUERY_ERROR");
+                }
                 iter = conns.erase(iter);
                 continue;
                 break;
@@ -102,6 +112,9 @@ void mirroraccel::ConnIncoming::dispatch()
             case ConnOutgoing::ST_QUERY_END:
             case ConnOutgoing::ST_TRANS_END:
                 if (!co->request()) {
+                    if (conns.size() == 1) {
+                        spdlog::debug("清空连接 ST_TRANS_END");
+                    }
                     iter = conns.erase(iter);
                     continue;
                 }
@@ -204,6 +217,7 @@ void mirroraccel::ConnIncoming::perform()
             std::lock_guard<std::mutex> lock(taskDataMux);
             if (taskWorkingList.size() == 0)
             {
+                spdlog::debug("准备关闭连接");
                 status = ST_CLOSED;
             }
             else
@@ -247,12 +261,12 @@ void mirroraccel::ConnIncoming::perform()
 
 bool mirroraccel::ConnIncoming::poll()
 {
+    //发起请求
+    perform();
     //等待事件
     eventWait();
     //状态机处理
     dispatch();
-    //发起请求
-    perform();
     return true;
 }
 
@@ -295,8 +309,17 @@ void mirroraccel::ConnIncoming::readData(mbuf &buf)
     if (task != nullptr && task->size())
         task->read(buf);
 
-    if (task->readFinished())
+    if (task->readFinished()) {
+        if (taskWorkingList.size() == 1) {
+            spdlog::debug("清空任务列表");
+        }
+        if(task->rangeSize == 0)
+            spdlog::debug("(task->rangeSize == 0) rangeStart {} rangeSize {} rangeCurReadSize {}", task->rangeStart, task->rangeSize, task->rangeCurReadSize);
+        else
+            spdlog::debug("删除任务 rangeStart {} rangeSize {} rangeCurReadSize {}", task->rangeStart, task->rangeSize, task->rangeCurReadSize);
+
         taskWorkingList.pop_front();
+    }
 }
 
 void mirroraccel::ConnIncoming::writeHeader(const std::string& header)
@@ -343,11 +366,6 @@ bool mirroraccel::ConnIncoming::onQueryEnd(ConnOutgoing *conn, std::shared_ptr<R
 
 std::shared_ptr<mirroraccel::Task> mirroraccel::ConnIncoming::fetchTask(std::shared_ptr<Task> lastTask)
 {
-    //没有任务返回空
-    if (rangeSize == rangeCurSize)
-    {
-        return nullptr;
-    }
 
     std::shared_ptr<Task> task = nullptr;
 
@@ -388,20 +406,27 @@ std::shared_ptr<mirroraccel::Task> mirroraccel::ConnIncoming::fetchTask(std::sha
                     return nullptr;
                 }
                 if (!minTask->wirteFinished()) {
+                    minco->stop();
+                    spdlog::debug("分裂任务 {}", minTask->rangeStart);
                     //分裂任务
+                    std::lock_guard<std::mutex> lock(taskDataMux);
                     task = std::make_shared<Task>(
                         minTask->rangeStart + minTask->rangeCurWriteSize,
                         minTask->rangeSize - minTask->rangeCurWriteSize);
                     //收缩任务，停止最慢连接
                     minTask->forceEnd();
-                    minco->stop();
 
                     //插入分裂后的新任务
-                    for (auto iter = taskWorkingList.begin(); iter != taskWorkingList.end(); iter++) {
-                        if (*iter == minTask) {
-                            taskWorkingList.insert(++iter, task);
-                            break;
+                    if (taskWorkingList.size() > 0) {
+                        for (auto iter = taskWorkingList.begin(); iter != taskWorkingList.end(); iter++) {
+                            if (*iter == minTask) {
+                                taskWorkingList.insert(++iter, task);
+                                break;
+                            }
                         }
+                    }
+                    else {
+                        taskWorkingList.push_back(task);
                     }
                     return task;
                 }
@@ -412,6 +437,11 @@ std::shared_ptr<mirroraccel::Task> mirroraccel::ConnIncoming::fetchTask(std::sha
         }
     }
 
+    //没有任务返回空
+    if (rangeSize == rangeCurSize)
+    {
+        return nullptr;
+    }
     auto readSize = rangeSize - rangeCurSize;
     if (readSize > TASK_DATA_SIZE && conns.size() > 1)
     {
@@ -422,6 +452,9 @@ std::shared_ptr<mirroraccel::Task> mirroraccel::ConnIncoming::fetchTask(std::sha
         rangeStart + rangeCurSize, readSize);
 
     rangeCurSize += readSize;
-    taskWorkingList.push_back(task);
+    {
+        std::lock_guard<std::mutex> lock(taskDataMux);
+        taskWorkingList.push_back(task);
+    }
     return task;
 }

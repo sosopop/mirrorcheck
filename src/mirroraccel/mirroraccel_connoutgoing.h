@@ -41,6 +41,8 @@ public:
     std::shared_ptr<Response> getResponse();
     std::int64_t totalIoSize();
     std::shared_ptr<Task> getTask();
+
+    std::string debug;
 private:
     static size_t writeCallback(char *bufptr, size_t size, size_t nitems, void *userp);
 	static size_t headerCallback(char *bufptr, size_t size, size_t nitems, void *userp);
