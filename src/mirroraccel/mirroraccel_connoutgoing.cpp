@@ -22,6 +22,7 @@ mirroraccel::ConnOutgoing::ConnOutgoing(
 
 mirroraccel::ConnOutgoing::~ConnOutgoing()
 {
+    spdlog::debug("移除连接, {}", mirror->getUrl());
     stop(false);
 }
 
@@ -50,6 +51,7 @@ void mirroraccel::ConnOutgoing::end(CURLcode code)
         code == CURLE_ABORTED_BY_CALLBACK ||
         code == CURLE_OK) {
         if (status == ST_TRANS) {
+            spdlog::debug("ConnOutgoing::end：{} {}", mirror->getUrl(), code);
             status = ST_TRANS_END;
         }
         else if (status == ST_QUERY) {
@@ -75,6 +77,16 @@ mirroraccel::ConnOutgoing::Status mirroraccel::ConnOutgoing::getStatus()
 std::shared_ptr<mirroraccel::Response> mirroraccel::ConnOutgoing::getResponse()
 {
     return response;
+}
+
+std::int64_t mirroraccel::ConnOutgoing::totalIoSize()
+{
+    return ioSize;
+}
+
+std::shared_ptr<mirroraccel::Task> mirroraccel::ConnOutgoing::getTask()
+{
+    return task;
 }
 
 void mirroraccel::ConnOutgoing::query( Status st )
@@ -114,6 +126,7 @@ void mirroraccel::ConnOutgoing::query( Status st )
 
     if (task != nullptr) {
         auto range = fmt::format("{}-{}", task->rangeStart, task->rangeStart + task->rangeSize - 1);
+        spdlog::debug("range：{} {}", mirror->getUrl(), range);
         curl_easy_setopt(curl, CURLOPT_RANGE, range.c_str());
     }
     else {
@@ -123,16 +136,17 @@ void mirroraccel::ConnOutgoing::query( Status st )
     }
 }
 
-void mirroraccel::ConnOutgoing::request()
+bool mirroraccel::ConnOutgoing::request()
 {
-    task = incoming.fetchTask();
+    task = incoming.fetchTask(task);
     if (task == nullptr) {
         stop();
-        return;
+        return false;
     }
     //第二期支持多连接传输
     spdlog::debug("准备发起 task request：{}", mirror->getUrl());
     query(ST_TRANS);
+    return true;
 }
 
 size_t mirroraccel::ConnOutgoing::writeCallback(char *bufptr, size_t size, size_t nitems, void *userp)
@@ -140,9 +154,11 @@ size_t mirroraccel::ConnOutgoing::writeCallback(char *bufptr, size_t size, size_
     ConnOutgoing *conn = static_cast<ConnOutgoing *>(userp);
     if (conn->task->wirteFinished())
     {
+        spdlog::debug("wirteFinished：{}", conn->mirror->getUrl());
         conn->status = ST_TRANS_END;
         return 0;
     }
+    conn->ioSize += size * nitems;
     if (conn->task->writeData(bufptr, size * nitems) > TASK_MAX_BUFFER_SIZE)
     {
         conn->status = ST_TRANS_WAIT_BUF_AVALID;
@@ -201,7 +217,7 @@ size_t mirroraccel::ConnOutgoing::headerCallback(char *bufptr, size_t size, size
                     {
                         //第一个获取到任务的连接直接进入传输状态
                         spdlog::debug("第一个获取到任务的连接直接进入传输状态：{}", conn->mirror->getUrl());
-                        conn->task = conn->incoming.fetchTask();
+                        conn->task = conn->incoming.fetchTask(conn->task);
                         if (conn->task == nullptr)
                         {
                             conn->status = ST_STOPED;

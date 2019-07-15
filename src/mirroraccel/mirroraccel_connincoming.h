@@ -52,7 +52,7 @@ private:
     CURLM* handle();
 
     bool onQueryEnd(ConnOutgoing* conn, std::shared_ptr<Response> response);
-    std::shared_ptr<Task> fetchTask();
+    std::shared_ptr<Task> fetchTask( std::shared_ptr<Task> lastTask);
 private:
 	//reset pending data
     Status status = ST_QUERY;

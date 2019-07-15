@@ -34,17 +34,18 @@ public:
     };
 public:
     void query( Status st = ST_QUERY);
-    void request();
+    bool request();
     void stop(bool reset = true);
     void end(CURLcode code);
     Status getStatus();
     std::shared_ptr<Response> getResponse();
+    std::int64_t totalIoSize();
+    std::shared_ptr<Task> getTask();
 private:
     static size_t writeCallback(char *bufptr, size_t size, size_t nitems, void *userp);
 	static size_t headerCallback(char *bufptr, size_t size, size_t nitems, void *userp);
     static int xferinfoCallback(void * p, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow);
 private:
-	//bool resetSignal = false;
     bool stopSignal = false;
     Status status = ST_QUERY;
     ConnIncoming &incoming;
@@ -58,6 +59,7 @@ private:
     //被分配的任务
     std::shared_ptr<Task> task = nullptr;
     mbuf buffer;
+    std::int64_t ioSize = 0;
 };
 } // namespace mirroraccel
 #endif

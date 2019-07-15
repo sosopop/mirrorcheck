@@ -72,39 +72,48 @@ void mirroraccel::ConnIncoming::dispatch()
         }
         conn->end(msg->data.result);
     }
-
+    if (stillRunning == 0 && conns.size() == 1) {
+        int a = 0;
+    }
     switch (status)
     {
     case ST_QUERY:
         //如果是查询状态，并且当前正在运行的连接为0，则返回错误信息
-        if (stillRunning == 0)
-        {
-            //返回失败信息 404
-        }
-        break;
-    case ST_TRANS:
         //开始下载请求
         for (auto co : conns)
         {
             //排除掉已经开始下载的连接
             auto st = co->getStatus();
+        }
+        break;
+    case ST_TRANS:
+        for (auto iter = conns.begin(); iter != conns.end();) {
+            auto co = *iter;
+            //排除掉已经开始下载的连接
+            auto st = co->getStatus();
             switch (st)
             {
             case ConnOutgoing::ST_QUERY_ERROR:
-                co->stop();
+            case ConnOutgoing::ST_STOPED:
+                iter = conns.erase(iter);
+                continue;
                 break;
             case ConnOutgoing::ST_QUERY:
             case ConnOutgoing::ST_QUERY_END:
             case ConnOutgoing::ST_TRANS_END:
-                co->request();
+                if (!co->request()) {
+                    iter = conns.erase(iter);
+                    continue;
+                }
                 break;
             case ConnOutgoing::ST_TRANS:
-            case ConnOutgoing::ST_STOPED:
+            case ConnOutgoing::ST_TRANS_WAIT_BUF_AVALID:
                 break;
             default:
-                co->stop();
+                //co->stop();
                 break;
             }
+            iter++;
         }
         break;
     default:
@@ -183,47 +192,67 @@ void mirroraccel::ConnIncoming::perform()
     if (stillRunning != newRuning)
     {
         stillRunning = newRuning;
-        spdlog::debug("current running handles {}", stillRunning);
-        if (stillRunning == 0)
-        {
-            status = ST_TRANS_END;
+        spdlog::debug("current running handles {}, conns {}", stillRunning, conns.size());
+        //if (stillRunning == 0)
+        //{
+        //    status = ST_TRANS_END;
+        //}
+    }
+
+    {
+        if (conns.size() == 0) {
+            std::lock_guard<std::mutex> lock(taskDataMux);
+            if (taskWorkingList.size() == 0)
+            {
+                status = ST_CLOSED;
+            }
+            else
+            {
+                std::shared_ptr<Task> task = *taskWorkingList.begin();
+                if (task->emptyBuffer()) {
+                    status = ST_CLOSED;
+                }
+            }
         }
     }
 
-    if (status == ST_TRANS_END)
-    {
-        //如果没有准备发送的任务，则关闭连接
-        std::lock_guard<std::mutex> lock(taskDataMux);
-        if (taskWorkingList.size() == 0)
-        {
-            status = ST_CLOSED;
-        }
-        else
-        {
-            std::shared_ptr<Task> task = *taskWorkingList.begin();
-            if (task->emptyBuffer()) {
-                status = ST_CLOSED;
-            }
-        }
-        //else
-        //{
-        //    std::shared_ptr<Task> task = *taskWorkingList.begin();
-        //    if (task->size() == 0)
-        //    {
-        //        status = ST_CLOSED;
-        //    }
-        //}
-    }
+    //if (status == ST_TRANS_END)
+    //{
+    //    //如果没有准备发送的任务，则关闭连接
+    //    std::lock_guard<std::mutex> lock(taskDataMux);
+    //    //if (conns.size() == 0)
+    //    {
+    //        if (taskWorkingList.size() == 0)
+    //        {
+    //            status = ST_CLOSED;
+    //        }
+    //        else
+    //        {
+    //            std::shared_ptr<Task> task = *taskWorkingList.begin();
+    //            if (task->emptyBuffer()) {
+    //                status = ST_CLOSED;
+    //            }
+    //        }
+    //    }
+    //    //else
+    //    //{
+    //    //    std::shared_ptr<Task> task = *taskWorkingList.begin();
+    //    //    if (task->size() == 0)
+    //    //    {
+    //    //        status = ST_CLOSED;
+    //    //    }
+    //    //}
+    //}
 }
 
 bool mirroraccel::ConnIncoming::poll()
 {
-    //发起请求
-    perform();
     //等待事件
     eventWait();
     //状态机处理
     dispatch();
+    //发起请求
+    perform();
     return true;
 }
 
@@ -312,7 +341,7 @@ bool mirroraccel::ConnIncoming::onQueryEnd(ConnOutgoing *conn, std::shared_ptr<R
     return false;
 }
 
-std::shared_ptr<mirroraccel::Task> mirroraccel::ConnIncoming::fetchTask()
+std::shared_ptr<mirroraccel::Task> mirroraccel::ConnIncoming::fetchTask(std::shared_ptr<Task> lastTask)
 {
     //没有任务返回空
     if (rangeSize == rangeCurSize)
@@ -320,24 +349,76 @@ std::shared_ptr<mirroraccel::Task> mirroraccel::ConnIncoming::fetchTask()
         return nullptr;
     }
 
-    //第一期直接第一个任务返回所有数据
-    /*
-    auto task = std::make_shared<Task>(
-        rangeStart, rangeSize
-        );
+    std::shared_ptr<Task> task = nullptr;
+
+    if ( 
+        lastTask != nullptr &&
+        taskWorkingList.size() > 0 &&
+        conns.size() > 1 ) 
     {
-        std::lock_guard<std::mutex> lock(taskDataMux);
-        taskWorkingSet.insert(task);
+        //通过任务分裂的方式，抢占其他任务
+
+        //先找到传输数据最少的连接和对应的任务
+        std::shared_ptr<ConnOutgoing> minco = nullptr;
+        for (auto iter = conns.begin(); iter != conns.end(); iter++) {
+            auto co = *iter;
+            auto task = co->getTask();
+            if (task == nullptr) {
+                //已经有完成任务的连接情况下，有还没有获取任务的连接，则直接认定为最慢连接，需要移除
+                minco = co;
+                break;
+            }
+            if (minco != nullptr) {
+                if (co->totalIoSize() < minco->totalIoSize()) {
+                    minco = co;
+                }
+            }
+            else {
+                minco = co;
+            }
+        }
+
+        //找到心仪的连接
+        if (minco != nullptr) {
+            //通过检查是否是相同任务，判断出如果最慢连接是当前连接，则直接退出
+            auto minTask = minco->getTask();
+            if (minTask != nullptr) {
+                if (minTask == lastTask)
+                {
+                    return nullptr;
+                }
+                if (!minTask->wirteFinished()) {
+                    //分裂任务
+                    task = std::make_shared<Task>(
+                        minTask->rangeStart + minTask->rangeCurWriteSize,
+                        minTask->rangeSize - minTask->rangeCurWriteSize);
+                    //收缩任务，停止最慢连接
+                    minTask->forceEnd();
+                    minco->stop();
+
+                    //插入分裂后的新任务
+                    for (auto iter = taskWorkingList.begin(); iter != taskWorkingList.end(); iter++) {
+                        if (*iter == minTask) {
+                            taskWorkingList.insert(++iter, task);
+                            break;
+                        }
+                    }
+                    return task;
+                }
+                else {
+                    minco->stop();
+                }
+            }
+        }
     }
-    */
-    //后期开发任务分段
+
     auto readSize = rangeSize - rangeCurSize;
     if (readSize > TASK_DATA_SIZE && conns.size() > 1)
     {
         readSize = TASK_DATA_SIZE;
     }
 
-    auto task = std::make_shared<Task>(
+    task = std::make_shared<Task>(
         rangeStart + rangeCurSize, readSize);
 
     rangeCurSize += readSize;
