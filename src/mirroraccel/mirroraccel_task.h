@@ -34,10 +34,10 @@ struct Task
             buffer = this->buffer;
             rangeCurReadSize += buffer.len;
             mbuf_init(&this->buffer, TASK_INIT_SIZE);
-            spdlog::debug(
-                "read rangeStart {} rangeSize {} rangeCurWriteSize {} rangeCurReadSize {}", 
-                rangeStart, rangeSize, rangeCurWriteSize, rangeCurReadSize
-            );
+            //spdlog::debug(
+            //    "read rangeStart {} rangeSize {} rangeCurWriteSize {} rangeCurReadSize {}", 
+            //    rangeStart, rangeSize, rangeCurWriteSize, rangeCurReadSize
+            //);
         }
     }
     size_t writeData(char *data, size_t len)
@@ -88,6 +88,7 @@ struct Task
     std::int64_t startTime = std::chrono::steady_clock::now().time_since_epoch().count();
     mbuf buffer;
     std::mutex bufferMux;
+    bool attached = true;
 };
 } // namespace mirroraccel
 // namespace mirroraccel

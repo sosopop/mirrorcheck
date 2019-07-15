@@ -129,7 +129,7 @@ void mirroraccel::ConnOutgoing::query( Status st )
 
     if (task != nullptr) {
         auto range = fmt::format("{}-{}", task->rangeStart, task->rangeStart + task->rangeSize - 1);
-        spdlog::debug("range：{} {}", mirror->getUrl(), range);
+        //spdlog::debug("range：{} {}", mirror->getUrl(), range);
         curl_easy_setopt(curl, CURLOPT_RANGE, range.c_str());
     }
     else {

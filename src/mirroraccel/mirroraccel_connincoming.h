@@ -53,6 +53,7 @@ private:
 
     bool onQueryEnd(ConnOutgoing* conn, std::shared_ptr<Response> response);
     std::shared_ptr<Task> fetchTask( std::shared_ptr<Task> lastTask);
+    void detachTask(std::shared_ptr<ConnOutgoing> conn);
 private:
 	//reset pending data
     Status status = ST_QUERY;
