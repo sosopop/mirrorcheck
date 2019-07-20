@@ -9,17 +9,16 @@
 #include <spdlog/spdlog.h>
 
 mirroraccel::ConnIncoming::ConnIncoming(
-    Server& server,
-	std::shared_ptr<Request> request) :
-    server(server),
-    request(request)
+    Server &server,
+    std::shared_ptr<Request> request) : server(server),
+                                        request(request)
 {
     curlMutil = curl_multi_init();
 
     spdlog::debug("new connection incoming, {}", request->getUrl());
-    std::vector<std::shared_ptr<MirrorItem>>& mirrors = server.getMirrors();
+    std::vector<std::shared_ptr<MirrorItem>> &mirrors = server.getMirrors();
     //生成连接
-    for (auto& item : mirrors)
+    for (auto &item : mirrors)
     {
         std::shared_ptr<ConnOutgoing> outgoing = std::make_shared<ConnOutgoing>(item, *this);
         conns.insert(outgoing);
@@ -63,10 +62,12 @@ void mirroraccel::ConnIncoming::dispatch()
     int msgs_left = 0;
 
     //http处理
-    while ((msg = curl_multi_info_read(curlMutil, &msgs_left))) {
-        ConnOutgoing* conn = nullptr;
+    while ((msg = curl_multi_info_read(curlMutil, &msgs_left)))
+    {
+        ConnOutgoing *conn = nullptr;
         curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &conn);
-        if (msg->msg != CURLMSG_DONE) {
+        if (msg->msg != CURLMSG_DONE)
+        {
             continue;
         }
         conn->end(msg->data.result);
@@ -86,7 +87,8 @@ void mirroraccel::ConnIncoming::dispatch()
         for (auto co : conns)
         {
             //排除掉已经开始下载的连接
-            if (co->getStatus() == ConnOutgoing::ST_QUERY || co->getStatus() == ConnOutgoing::ST_QUERY_END) {
+            if (co->getStatus() == ConnOutgoing::ST_QUERY || co->getStatus() == ConnOutgoing::ST_QUERY_END)
+            {
                 co->stop();
             }
         }
@@ -99,7 +101,7 @@ void mirroraccel::ConnIncoming::dispatch()
 void mirroraccel::ConnIncoming::eventWait()
 {
     struct timeval timeout;
-    int rc; /* select() return code */
+    int rc;       /* select() return code */
     CURLMcode mc; /* curl_multi_fdset() return code */
 
     fd_set fdread;
@@ -118,7 +120,8 @@ void mirroraccel::ConnIncoming::eventWait()
     timeout.tv_usec = 0;
 
     curl_multi_timeout(curlMutil, &curlTimeo);
-    if (curlTimeo >= 0) {
+    if (curlTimeo >= 0)
+    {
         timeout.tv_sec = curlTimeo / 1000;
         if (timeout.tv_sec > 1)
             timeout.tv_sec = 1;
@@ -129,7 +132,8 @@ void mirroraccel::ConnIncoming::eventWait()
     /* get file descriptors from the transfers */
     mc = curl_multi_fdset(curlMutil, &fdread, &fdwrite, &fdexcep, &maxfd);
 
-    if (mc != CURLM_OK) {
+    if (mc != CURLM_OK)
+    {
         fprintf(stderr, "curl_multi_fdset() failed, code %d.\n", mc);
     }
 
@@ -139,17 +143,19 @@ void mirroraccel::ConnIncoming::eventWait()
        to sleep 100ms, which is the minimum suggested value in the
        curl_multi_fdset() doc. */
 
-    if (maxfd == -1) {
+    if (maxfd == -1)
+    {
 #ifdef _WIN32
         Sleep(10);
         rc = 0;
 #else
         /* Portable sleep for platforms other than Windows. */
-        struct timeval wait = { 0, 100 * 1000 }; /* 100ms */
+        struct timeval wait = {0, 100 * 1000}; /* 100ms */
         rc = select(0, NULL, NULL, NULL, &wait);
 #endif
     }
-    else {
+    else
+    {
         /* Note that on some platforms 'timeout' may be modified by select().
            If you need access to the original value save a copy beforehand. */
         rc = select(maxfd + 1, &fdread, &fdwrite, &fdexcep, &timeout);
@@ -158,25 +164,31 @@ void mirroraccel::ConnIncoming::eventWait()
 
 void mirroraccel::ConnIncoming::perform()
 {
-    int  newRuning = 0;
+    int newRuning = 0;
     curl_multi_perform(curlMutil, &newRuning);
-    if (stillRunning != newRuning) {
+    if (stillRunning != newRuning)
+    {
         stillRunning = newRuning;
         spdlog::debug("current running handles {}", stillRunning);
-        if (stillRunning == 0) {
+        if (stillRunning == 0)
+        {
             status = ST_TRANS_END;
         }
     }
 
-    if (status == ST_TRANS_END) {
+    if (status == ST_TRANS_END)
+    {
         //如果没有准备发送的任务，则关闭连接
         std::lock_guard<std::mutex> lock(taskDataMux);
-        if (taskWorkingSet.size() == 0) {
+        if (taskWorkingSet.size() == 0)
+        {
             status = ST_CLOSED;
         }
-        else {
+        else
+        {
             std::shared_ptr<Task> task = *taskWorkingSet.begin();
-            if (task->size() == 0) {
+            if (task->size() == 0)
+            {
                 status = ST_CLOSED;
             }
         }
@@ -204,7 +216,7 @@ void mirroraccel::ConnIncoming::reset(std::shared_ptr<Request> request)
     //停止请求线程
     stop();
     this->request = request;
-    for (auto co: conns)
+    for (auto co : conns)
     {
         //重新发起请求
         co->query();
@@ -213,14 +225,16 @@ void mirroraccel::ConnIncoming::reset(std::shared_ptr<Request> request)
     start();
 }
 
-void mirroraccel::ConnIncoming::readData(mbuf & buf)
+void mirroraccel::ConnIncoming::readData(mbuf &buf)
 {
     std::lock_guard<std::mutex> lock(taskDataMux);
-    if (taskWorkingSet.size() == 0) {
+    if (taskWorkingSet.size() == 0)
+    {
         return;
     }
     std::shared_ptr<Task> task = *taskWorkingSet.begin();
-    if (task->size() == 0) {
+    if (task->size() == 0)
+    {
         return;
     }
     task->read(buf);
@@ -231,24 +245,28 @@ mirroraccel::ConnIncoming::Status mirroraccel::ConnIncoming::getStatus()
     return status;
 }
 
-CURLM * mirroraccel::ConnIncoming::handle()
+CURLM *mirroraccel::ConnIncoming::handle()
 {
     return curlMutil;
 }
 
-bool mirroraccel::ConnIncoming::onQueryEnd(ConnOutgoing* conn, std::shared_ptr<Response> response)
+bool mirroraccel::ConnIncoming::onQueryEnd(ConnOutgoing *conn, std::shared_ptr<Response> response)
 {
-    if (status == ST_QUERY) {
+    if (status == ST_QUERY)
+    {
         this->response = response;
         //非range请求
-        if (response->rangeTotal == 0) {
+        if (response->rangeTotal == 0)
+        {
             rangeStart = 0;
             rangeSize = response->contentLength;
         }
-        else {
+        else
+        {
             rangeStart = response->rangeStart;
             rangeSize = response->contentLength;
-            if (response->rangeEnd != response->rangeStart && rangeSize == 0) {
+            if (response->rangeEnd != response->rangeStart && rangeSize == 0)
+            {
                 rangeSize = response->rangeEnd - response->rangeStart + 1;
             }
         }
@@ -261,14 +279,14 @@ bool mirroraccel::ConnIncoming::onQueryEnd(ConnOutgoing* conn, std::shared_ptr<R
 std::shared_ptr<mirroraccel::Task> mirroraccel::ConnIncoming::fetchTask()
 {
     //没有任务返回空
-    if (rangeSize == rangeCurSize) {
+    if (rangeSize != 0 && rangeSize == rangeCurSize)
+    {
         return nullptr;
     }
 
     //第一期直接第一个任务返回所有数据
     auto task = std::make_shared<Task>(
-        rangeStart, rangeSize
-        );
+        rangeStart, rangeSize);
     {
         std::lock_guard<std::mutex> lock(taskDataMux);
         taskWorkingSet.insert(task);
